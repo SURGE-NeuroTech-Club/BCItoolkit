@@ -41,7 +41,7 @@ class BrainFlowBoardSetup:
             if hasattr(self.params, key):
                 setattr(self.params, key, value)
             else:
-                print(f"Warning: {key} is not a valid parameter for BrainFlowInputParams")
+                print(f"Warning: {key} is not a valid parameter for BrainFlowInputParams - see the Brainflow documentation for a complete list of valid parameters")
 
         self.board = None
         self.session_prepared = False

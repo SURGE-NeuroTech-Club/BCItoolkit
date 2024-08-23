@@ -57,18 +57,20 @@ class PreProcess:
     #         DataFilter.perform_bandpass(data[channel], self.sampling_rate, lowcut, highcut, order, FilterTypes.BUTTERWORTH, 0)
     #     return data
 
-    def filter_data(self, data):
+    def filter_data(self, data, low=0.5, high=30.0):
         """
         Applies a bandpass filter to the EEG data.
 
         Args:
             data (np.ndarray): The EEG data to be filtered.
+            low (float, optional): Low cut frequency in Hz. Defaults to 0.5.
+            high (float, optional): High cut frequency in Hz. Defaults to 30.0.
 
         Returns:
             np.ndarray: The filtered EEG data.
         """
-        lowcut = 0.5  # Example low cut frequency in Hz
-        highcut = 30.0  # Example high cut frequency in Hz
+        lowcut = low  # Example low cut frequency in Hz
+        highcut = high  # Example high cut frequency in Hz
         filtered_data = np.apply_along_axis(self.bandpass_filter, 1, data, lowcut, highcut, self.sampling_rate)
         return filtered_data
 

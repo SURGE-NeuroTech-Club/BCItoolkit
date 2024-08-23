@@ -2,6 +2,8 @@
 
 The goal of this repo/library is to make a toolkit for making SSVEP/ERP-based brain-computer interfaces accessible for those who don't have much/any experience.
 
+**Preprocessing:**
+- Split into Segmenting, Filters, Other(?)
 
 # Notes:
 

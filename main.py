@@ -1,6 +1,6 @@
 from modules.preprocessing import *
 from modules.maintenence import *
-from modules.stream_data import *
+from modules.brainflow_stream import *
 from modules.ssvep_handler import *
 from modules.stim_pres import *
 

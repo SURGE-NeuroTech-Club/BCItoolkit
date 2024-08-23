@@ -5,7 +5,7 @@
 
 def main():
     # Define board ID and serial port (replace with your actual values)
-    board_id = 0  # Example: 0 for synthetic board
+    board_id = 0  # For synthetic board; full list of supported boards here: https://brainflow.readthedocs.io/en/stable/UserAPI.html#brainflow-board-shim
     serial_port = "COM3"  # Replace with your actual serial port
     
     # Additional BrainFlow input parameters (if any)
