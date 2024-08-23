@@ -1,0 +1,116 @@
+---
+title: SSVEPStimulus Class Documentation
+---
+
+## Overview
+
+The `SSVEPStimulus` class is designed to manage the stimulus presentation paradigm for a Steady-State Visual Evoked Potential (SSVEP) Brain-Computer Interface (BCI) system. This class handles the creation and control of flickering boxes on a display, which are used to evoke SSVEP responses in a user.
+
+## Class Attributes
+
+- **win (`visual.Window`)**: The PsychoPy window where stimuli are presented.
+- **refresh_rate (`float`)**: The refresh rate of the display in Hz.
+- **actual_frequencies (`list of float`)**: The list of actual frequencies that can be displayed given the refresh rate.
+- **boxes (`list of dict`)**: A list of dictionaries, each containing the box stimulus and its related properties.
+- **start (`bool`)**: Flag indicating whether the stimulus presentation has started.
+- **frame_count (`int`)**: Counter for the number of frames elapsed.
+
+## Methods
+
+### `__init__(self, box_frequencies, box_texts=None, box_text_indices=None, display_index=0, display_mode=None)`
+
+Initializes the `SSVEPStimulus` class with the specified parameters.
+
+**Args:**
+
+- **`box_frequencies (list of float)`**: Desired frequencies for the flickering boxes.
+- **`box_texts (list of str, optional)`**: Texts or symbols to display on the boxes.
+- **`box_text_indices (list of int, optional)`**: Indices indicating which boxes should display text.
+- **`display_index (int, optional)`**: Index of the display screen to use.
+- **`display_mode (str, optional)`**: Specifies what to display on the boxes. Options are `"freq"` for frequency, `"text"` for text, `"both"` for both frequency and text, or `"None"` for empty boxes.
+
+**Usage:**
+
+```
+stimulus = SSVEPStimulus(box_frequencies=[8, 10, 12], box_texts=["A", "B", "C"], box_text_indices=[0, 2, 4], display_index=0, display_mode="both")
+```
+
+### `calculate_actual_frequencies(self, desired_frequencies)`
+
+Calculates the actual frequencies that can be shown given the measured refresh rate.
+
+**Args:**
+
+- **`desired_frequencies (list of float)`**: The desired frequencies for the flickering boxes.
+
+**Returns:**
+
+- **`list of float`**: The actual frequencies that can be achieved given the screen's refresh rate.
+
+**Usage:**
+
+```
+actual_frequencies = stimulus.calculate_actual_frequencies([8, 10, 12])
+```
+
+### `get_actual_frequencies(self)`
+
+Returns the actual frequencies calculated for the stimulus presentation.
+
+**Returns:**
+
+- **`list of float`**: The actual frequencies used.
+
+**Usage:**
+
+```
+actual_frequencies = stimulus.get_actual_frequencies()
+```
+
+### `run(self)`
+
+Runs the main loop to handle the stimulus presentation.
+
+**Description:**
+
+- The loop waits for a key press (space/enter) to start the stimulus presentation. Once started, the boxes will flicker at their assigned frequencies. The loop will continue until the escape key is pressed.
+
+**Usage:**
+
+```
+stimulus.run()
+```
+
+## Example Usage
+
+Here’s how you might use the `SSVEPStimulus` class in a script:
+
+```
+def main():
+    # List of desired frequencies
+    box_frequencies = [8, 10, 12, 14, 16, 18] 
+
+    # List of texts or symbols to display on the stimuli
+    box_texts = ["A", "B", "C"]  
+
+    # Indices where the texts should be displayed
+    box_text_indices = [0, 2, 4]  
+
+    # Option to display just "freq", just "text", "both", or None
+    display_mode = "both"  
+
+    stimulus = SSVEPStimulus(box_frequencies, 
+                             box_texts=box_texts, 
+                             box_text_indices=box_text_indices,          
+                             display_mode=display_mode)
+    
+    # Retrieve and print the actual frequencies calculated (useful for CCA analysis)
+    actual_frequencies = stimulus.get_actual_frequencies()
+    print(f"Calculated Frequencies: {actual_frequencies}")
+
+    # Run the stimulus presentation
+    stimulus.run()
+
+if __name__ == "__main__":
+    main()
+```
