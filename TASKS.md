@@ -2,8 +2,22 @@
 
 The goal of this repo/library is to make a toolkit for making SSVEP/ERP-based brain-computer interfaces accessible for those who don't have much/any experience.
 
+
 **Preprocessing:**
-- Split into Segmenting, Filters, Other(?)
+- [X] Split into Segmenting, Filters, Other(?)
+  - [ ] Test Segmentation.py
+    - Overlapping data issues? -> better way to implement segmentation? (just have `get_data` module??)
+  - [ ] Test Filtering.py -> validate the results in processing_test.ipynb
+- Artifact removal  
+  - Based on amplitude
+  - EOG artifact removal?
+
+**Stim_Pres:**
+
+
+#### Completed:
+- [X] Add function to measure refresh rate and give a list of all possible flicker frequencies for your screen!
+
 
 # Notes:
 

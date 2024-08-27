@@ -18,7 +18,7 @@ class SSVEPStimulus:
         frame_count (int): Counter for the number of frames elapsed.
     """
 
-    def __init__(self, box_frequencies, box_texts=None, box_text_indices=None, display_index=0, display_mode=None):
+    def __init__(self, box_frequencies, box_texts=None, box_text_indices=None, display_index=0, display_mode=None, monitor_name='testMonitor'):
         """
         Initializes the SSVEPStimulus class.
 
@@ -29,12 +29,13 @@ class SSVEPStimulus:
             display_index (int, optional): Index of the display screen to use.
             display_mode (str, optional): Specifies what to display on the boxes. 
                                           Options are "freq" for frequency, "text" for text, "both" for both frequency and text, or "None" for empty boxes.
+            monitor_name (str, optional): Name of the monitor configuration to use in PsychoPy.
         """
         if box_texts and len(box_texts) != len(box_text_indices):
             raise ValueError("The length of box_texts and box_text_indices must be the same if box_texts is provided.")
         
         # Setup monitor and window
-        monitor = monitors.Monitor(name='testMonitor')  # Change as appropriate
+        monitor = monitors.Monitor(name=monitor_name)
         
         win = visual.Window(
             monitor=monitor, 
@@ -192,7 +193,7 @@ class SSVEPStimulus:
 # Example usage
 if __name__ == "__main__":
     # List of desired frequencies
-    box_frequencies = [8, 10, 12, 14, 16, 18] 
+    box_frequencies = [7.50, 8.57, 10, 12, 15, 20] 
 
     # List of texts or symbols to display on the stimuli
     box_texts = ["A", "B", "C"]  
@@ -208,7 +209,7 @@ if __name__ == "__main__":
                              box_text_indices=box_text_indices,          
                              display_mode=display_mode)
     
-    # Retrieve and print the actual frequencies calculated (usefull for CCA analysis)
+    # Retrieve and print the actual frequencies calculated (useful for CCA analysis)
     actual_frequencies = stimulus.get_actual_frequencies()
     print(f"Calculated Frequencies: {actual_frequencies}")
 

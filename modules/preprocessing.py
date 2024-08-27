@@ -26,7 +26,7 @@ class PreProcess:
         self.segment_duration = segment_duration
         self.sampling_rate = BoardShim.get_sampling_rate(self.board.board_id)
         self.n_samples = int(self.sampling_rate * self.segment_duration)
-  
+
     def get_segment(self):
         """
         Retrieves the latest segment of EEG data.
