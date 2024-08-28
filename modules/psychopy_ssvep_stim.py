@@ -1,141 +1,106 @@
-from psychopy import visual, event, core, monitors
 import numpy as np
+from psychopy import visual, event, core, monitors
+import time
 
 class SSVEPStimulus:
-    def __init__(self, box_frequencies, box_texts=None, box_text_indices=None, display_index=0, display_mode=None, monitor_name='testMonitor'):
+    def __init__(self, box_frequencies, box_texts=None, box_text_indices=None, display_index=0, monitor_name='testMonitor'):
         self.box_frequencies = box_frequencies
         self.box_texts = box_texts
         self.box_text_indices = box_text_indices
-        self.display_mode = display_mode
 
-        if box_texts and len(box_texts) != len(box_text_indices):
-            raise ValueError("The length of box_texts and box_text_indices must be the same if box_texts is provided.")
-        
-        monitor = monitors.Monitor(name=monitor_name)
+        # Setup PsychoPy window and monitor
+        monitor = monitors.Monitor(monitor_name)
         self.win = visual.Window(
-            monitor=monitor, 
-            screen=display_index, 
-            fullscr=True, 
-            color='black', 
-            units='pix', 
-            allowGUI=False, 
+            monitor=monitor,
+            screen=display_index,
+            fullscr=False,  # Set to False for easier debugging; change to True for full screen
+            color='black',
+            units='pix',
+            allowGUI=False,
             winType='pyglet',
             autoLog=False
         )
 
-        refresh_rates = []
-        for _ in range(2):
-            refresh_rate = self.win.getActualFrameRate(nIdentical=80, nWarmUpFrames=200, threshold=1)
-            if refresh_rate is not None:
-                refresh_rates.append(refresh_rate)
-            core.wait(0.1)
-
-        self.refresh_rate = round(np.mean(refresh_rates), 0)  
+        self.refresh_rate = self.win.getActualFrameRate() or 60  # Use default if unable to measure
         print(f"Measured Refresh Rate: {self.refresh_rate:.2f} Hz")
 
+        # Calculate actual frequencies
         self.actual_frequencies = self.calculate_actual_frequencies(box_frequencies)
-        
-        sorted_indices = sorted(range(len(self.actual_frequencies)), key=lambda i: self.actual_frequencies[i])
-        interleaved_indices = []
-        left, right = 0, len(sorted_indices) - 1
-        while left <= right:
-            if left == right:
-                interleaved_indices.append(sorted_indices[left])
-            else:
-                interleaved_indices.append(sorted_indices[left])
-                interleaved_indices.append(sorted_indices[right])
-            left += 1
-            right -= 1
+        self.boxes = self.create_boxes()
 
-        self.boxes = []
+        self.is_running = False
         self.frame_count = 0
-        
-        centerX, centerY = 0, 0
-        radius = min(self.win.size) // 3
-        num_boxes = len(self.actual_frequencies)
-
-        for i, idx in enumerate(interleaved_indices):
-            angle = 2 * np.pi * i / num_boxes
-            pos = (centerX + int(radius * np.cos(angle)), centerY + int(radius * np.sin(angle)))
-            box = visual.Rect(win=self.win, width=150, height=150, fillColor='white', lineColor='white', pos=pos)
-            
-            box_info = {
-                "box": box,
-                "frequency": self.actual_frequencies[idx],
-                "frame_count": 0,
-                "on": True
-            }
-
-            if self.display_mode in ["freq", "both"]:
-                freq_text_stim = visual.TextStim(win=self.win, text=f"{self.actual_frequencies[idx]:.2f} Hz", color='black', pos=pos)
-                box_info["text"] = freq_text_stim
-
-            if self.display_mode in ["both"] and self.box_texts and idx in box_text_indices:
-                box_text = box_texts[box_text_indices.index(idx)]
-                box_text_stim = visual.TextStim(win=self.win, text=box_text, color='black', pos=(pos[0], pos[1] + 30))
-                box_info["box_text"] = box_text_stim
-
-            if self.display_mode in ["text"] and self.box_texts and idx in box_text_indices:
-                box_text = box_texts[box_text_indices.index(idx)]
-                box_text_stim = visual.TextStim(win=self.win, text=box_text, color='black', pos=pos)
-                box_info["box_text"] = box_text_stim
-            
-            self.boxes.append(box_info)
-
-        self.start_button = visual.Rect(win=self.win, width=300, height=100, fillColor='green', pos=(0, 0))
-        self.start_text = visual.TextStim(win=self.win, text='Press Space/Enter to Start', color='white', pos=(0, 0))
-        self.running = False
-        self._stop = False
 
     def calculate_actual_frequencies(self, desired_frequencies):
         actual_frequencies = []
         for freq in desired_frequencies:
             frames_per_cycle = round(self.refresh_rate / freq)
-            actual_freq = round(self.refresh_rate / frames_per_cycle, 2)
+            actual_freq = self.refresh_rate / frames_per_cycle
             actual_frequencies.append(actual_freq)
         return actual_frequencies
 
+    def create_boxes(self):
+        boxes = []
+        radius = min(self.win.size) // 3
+        centerX, centerY = 0, 0
+        num_boxes = len(self.actual_frequencies)
+
+        for i, freq in enumerate(self.actual_frequencies):
+            angle = 2 * np.pi * i / num_boxes
+            pos = (centerX + int(radius * np.cos(angle)), centerY + int(radius * np.sin(angle)))
+            box = visual.Rect(win=self.win, width=150, height=150, fillColor='white', pos=pos)
+            boxes.append({
+                "box": box,
+                "frequency": freq,
+                "on": True,
+                "frame_count": 0
+            })
+        return boxes
+
     def start(self):
-        self.running = False
-        while not self.running:
-            self.start_button.draw()
-            self.start_text.draw()
-            self.win.flip()
-            keys = event.getKeys()
-            if 'space' in keys or 'return' in keys:
-                self.running = True
+        self.is_running = True
+        self.run_loop()
+
+    def run_loop(self):
+        while self.is_running:
+            self.update()
+            time.sleep(1.0 / self.refresh_rate)  # Maintain the refresh rate consistency
 
     def update(self):
-        if not self.running or self._stop:
-            return
-        
         self.frame_count += 1
-        for box in self.boxes:
-            flicker_period = self.refresh_rate / box["frequency"]
+        for box_info in self.boxes:
+            flicker_period = self.refresh_rate / box_info["frequency"]
             if (self.frame_count % flicker_period) < (flicker_period / 2):
-                if not box["on"]:
-                    box["on"] = True
-                    box["box"].setAutoDraw(True)
-                    if "text" in box:
-                        box["text"].setAutoDraw(True)
-                    if "box_text" in box:
-                        box["box_text"].setAutoDraw(True)
+                if not box_info["on"]:
+                    box_info["box"].setAutoDraw(True)
+                    box_info["on"] = True
             else:
-                if box["on"]:
-                    box["on"] = False
-                    box["box"].setAutoDraw(False)
-                    if "text" in box:
-                        box["text"].setAutoDraw(False)
-                    if "box_text" in box:
-                        box["box_text"].setAutoDraw(False)
+                if box_info["on"]:
+                    box_info["box"].setAutoDraw(False)
+                    box_info["on"] = False
 
         self.win.flip()
         if 'escape' in event.getKeys():
-            self._stop = True
-
-    def is_finished(self):
-        return self._stop
+            self.stop()
 
     def stop(self):
+        self.is_running = False
         self.win.close()
         core.quit()
+
+    def is_finished(self):
+        return not self.is_running
+
+# Example Usage
+def main():
+    # Example parameters
+    frequencies = [9.25, 11.25, 13.25, 15.25]
+    buttons = ['Right', 'Left', 'Up', 'Down']
+    display = 0
+    
+    # Instantiate and start stimulus
+    stimulus = SSVEPStimulus(box_frequencies=frequencies, box_texts=buttons, display_index=display)
+    stimulus.start()
+
+if __name__ == "__main__":
+    main()

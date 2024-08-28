@@ -2,6 +2,11 @@
 
 The goal of this repo/library is to make a toolkit for making SSVEP/ERP-based brain-computer interfaces accessible for those who don't have much/any experience.
 
+**General:**
+- [ ] Test & integrate multiprocessing into the stimulus presentation & processing bits
+  - Example_pipeline_*.py/BCIpipeline_multiprocessing.py
+  - Create a `BCIPipeline` class to handle the full integration of an online BCI??
+
 **Classification:***
 - [ ] Test new classification module
   - [ ] CCA

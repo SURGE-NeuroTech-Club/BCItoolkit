@@ -39,22 +39,13 @@ print(f"Sampling Rate: {sampling_rate}")
 print(f"Default Channels: {eeg_channels}")
 print(f"Channel Mapping: {channel_mapping}")
 
-def run_stimulus():
-    stimulus = SSVEPStimulus(box_frequencies=frequencies, 
-                             box_texts=buttons, 
-                             box_text_indices=button_pos,          
-                             display_mode="both",
-                             display_index=display)
-    stimulus.run()
+def run_stimulus(stimulus):
+    stimulus.start()
+    while not stimulus.is_finished():
+        stimulus.update()
+        time.sleep(1.0 / stimulus.refresh_rate)  # Maintain the refresh rate consistency
 
-def main():
-    board = BrainFlowBoardSetup(board_id, serial_port)
-    board.setup()
-
-    # Start stimulus presentation on separate thread
-    stimulus_thread = threading.Thread(target=run_stimulus)
-    stimulus_thread.start()
-
+def run_processing(board, stimulus, harmonics, sampling_rate, n_samples):
     segmentation_time_wait = Segmentation(board, segment_duration=2)
     actual_freqs = stimulus.actual_frequencies
 
@@ -65,7 +56,7 @@ def main():
                                      method='CCA', 
                                      stack_harmonics=True)
 
-    while True:
+    while not stimulus.is_finished():
         segment = segmentation_time_wait.get_segment_time()
         if segment is not None:
             print("Segment Retrieved:", segment.shape)
@@ -73,6 +64,26 @@ def main():
 
             detected_freq, correlation = cca_classifier(eeg_segment)
             print(f"Detected frequency using CCA: {detected_freq} Hz with correlation: {correlation:.3f}")
+
+def main():
+    board = BrainFlowBoardSetup(board_id, serial_port)
+    board.setup()
+
+    # Initialize stimulus
+    stimulus = SSVEPStimulus(box_frequencies=frequencies, 
+                             box_texts=buttons, 
+                             box_text_indices=button_pos,          
+                             display_index=display)
+
+    # Start EEG data processing in a separate thread
+    processing_thread = threading.Thread(target=run_processing, args=(board, stimulus, harmonics, sampling_rate, n_samples))
+    processing_thread.start()
+
+    # Run stimulus presentation in the main thread
+    run_stimulus(stimulus)
+
+    # Ensure the processing thread finishes before exiting
+    processing_thread.join()
 
 if __name__ == "__main__":
     main()
