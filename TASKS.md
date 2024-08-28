@@ -2,12 +2,20 @@
 
 The goal of this repo/library is to make a toolkit for making SSVEP/ERP-based brain-computer interfaces accessible for those who don't have much/any experience.
 
+**Classification:***
+- [ ] Test new classification module
+  - [ ] CCA
+  - [ ] FBCCA
+- [ ] Add (+ test other classifiers)
+  - [ ] LDA
+  - [ ] LR
+  - [ ] SVM
 
 **Preprocessing:**
 - [X] Split into Segmenting, Filters, Other(?)
   - [ ] Test Segmentation.py
     - Overlapping data issues? -> better way to implement segmentation? (just have `get_data` module??)
-  - [ ] Test Filtering.py -> validate the results in processing_test.ipynb
+  - [X] Test Filtering.py -> validate the results in processing_test.ipynb
 - Artifact removal  
   - Based on amplitude
   - EOG artifact removal?

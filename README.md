@@ -7,7 +7,6 @@ This repository holds the codebase and documentation for the BCItoolkit library.
 - `preprocessing.py`: Class that contains functions to segment, filter, and save data
 - `ssvep_handler.py`: Classes that generate harmonics and uses canonical correlation analysis (CCA) to classify SSVEP data, and functions that perform and return signal-to-noise ratio (SNR)
 - `stim_pres.py`: Code related to stimulus presentation (i.e., flickering stimuli to elicit SSVEP)
-- `maintenence.py`: Code related to listening for the 'esc' key and raising stop flags
 
 
 

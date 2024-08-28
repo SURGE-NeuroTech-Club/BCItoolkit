@@ -87,6 +87,25 @@ class BrainFlowBoardSetup:
         else:
             print("Board is not set up")
             return None
+        
+    def insert_marker(self, marker, verbose=True):
+        """
+        Inserts a marker into the data stream.
+
+        Args:
+            marker (float): The marker value to be inserted.
+        """
+        self.verbose = verbose
+
+        if self.board is not None and self.streaming:
+            try:
+                self.board.insert_marker(marker)
+                if self.verbose == True:
+                    print(f"Marker {marker} inserted successfully")
+            except BrainFlowError as e:
+                print(f"Error inserting marker: {e}")
+        else:
+            print("Board is not streaming, cannot insert marker")
     
     def stop(self):
         """

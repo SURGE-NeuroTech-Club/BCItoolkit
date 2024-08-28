@@ -1,7 +1,7 @@
 from psychopy import visual, event, core, monitors
 import numpy as np
 
-# Bug that spits futurewarning but doesn't seem to affect execution
+# Supressing bug that spits futurewarning but doesn't seem to affect execution
 import warnings
 warnings.filterwarnings("ignore", message="elementwise comparison failed; returning scalar instead")
 
@@ -31,6 +31,11 @@ class SSVEPStimulus:
                                           Options are "freq" for frequency, "text" for text, "both" for both frequency and text, or "None" for empty boxes.
             monitor_name (str, optional): Name of the monitor configuration to use in PsychoPy.
         """
+        self.box_frequencies = box_frequencies
+        self.box_texts = box_texts
+        self.box_text_indices = box_text_indices
+        self.display_mode = display_mode
+
         if box_texts and len(box_texts) != len(box_text_indices):
             raise ValueError("The length of box_texts and box_text_indices must be the same if box_texts is provided.")
         
@@ -50,13 +55,19 @@ class SSVEPStimulus:
 
         self.win = win
 
-        # Measure screen refresh rate using getActualFrameRate      
-        self.refresh_rate = win.getActualFrameRate(nIdentical=80, nWarmUpFrames=120, threshold=1)
+        # Measure screen refresh rate using getActualFrameRate (takes 2 measurements, and averages)
+        refresh_rates = []
+        for _ in range(2):
+            refresh_rate = win.getActualFrameRate(nIdentical=80, nWarmUpFrames=200, threshold=1)
+            refresh_rates.append(refresh_rate)
+            core.wait(0.1)
+
+        self.refresh_rate = round(np.mean(refresh_rates), 0)  
         print(f"Measured Refresh Rate: {self.refresh_rate:.2f} Hz")
 
         # Calculate actual frequencies that can be shown given the refresh rate
         self.actual_frequencies = self.calculate_actual_frequencies(box_frequencies)
-        print(f"Actual Frequencies: {self.actual_frequencies}")
+        # print(f"Actual Frequencies: {self.actual_frequencies}")
 
         # Sort and interleave the indices of the boxes to maximize the distance between similar frequencies
         sorted_indices = sorted(range(len(self.actual_frequencies)), key=lambda i: self.actual_frequencies[i])
@@ -132,18 +143,12 @@ class SSVEPStimulus:
         actual_frequencies = []
         for freq in desired_frequencies:
             frames_per_cycle = round(self.refresh_rate / freq)
-            actual_freq = self.refresh_rate / frames_per_cycle
+            actual_freq = round(self.refresh_rate / frames_per_cycle, 2)
             actual_frequencies.append(actual_freq)
-        return actual_frequencies
-
-    def get_actual_frequencies(self):
-        """
-        Return the actual frequencies calculated for the stimulus presentation.
         
-        Returns:
-            list of float: The actual frequencies used.
-        """
-        return self.actual_frequencies
+        self.actual_frequencies = actual_frequencies
+
+        return actual_frequencies
 
     def run(self):
         """
@@ -193,7 +198,7 @@ class SSVEPStimulus:
 # Example usage
 if __name__ == "__main__":
     # List of desired frequencies
-    box_frequencies = [7.50, 8.57, 10, 12, 15, 20] 
+    box_frequencies =  [9, 9.2, 9.5, 10, 10.3, 11, 12] 
 
     # List of texts or symbols to display on the stimuli
     box_texts = ["A", "B", "C"]  
@@ -209,9 +214,9 @@ if __name__ == "__main__":
                              box_text_indices=box_text_indices,          
                              display_mode=display_mode)
     
-    # Retrieve and print the actual frequencies calculated (useful for CCA analysis)
-    actual_frequencies = stimulus.get_actual_frequencies()
-    print(f"Calculated Frequencies: {actual_frequencies}")
+    # Retrieve and print the actual frequencies calculated (useful for classification)
+    print(f"Requested Frequencies: {stimulus.box_frequencies}")
+    print(f"Actual Frequencies: {stimulus.actual_frequencies}")
 
     # Run the stimulus presentation
     stimulus.run()

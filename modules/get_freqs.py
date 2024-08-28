@@ -1,10 +1,11 @@
 from psychopy import visual, core, monitors
 import numpy as np
 
-def get_possible_frequencies(display_index=0, num_measurements=5, monitor_name='testMonitor'):
+def get_possible_frequencies(display_index=0, num_measurements=2, monitor_name='testMonitor'):
     """
     Measures the refresh rate of the monitor multiple times, averages the results,
     and returns a list of possible frequencies it can display, rounded to 2 decimal places.
+    If you have a lower refresh-rate monitor (60 Hz) you should increase the num_measurements to 3-5.
 
     Args:
         display_index (int, optional): The index of the display screen to use.
@@ -44,7 +45,7 @@ def get_possible_frequencies(display_index=0, num_measurements=5, monitor_name='
         refresh_rates.append(refresh_rate)
         core.wait(0.1)  # Short delay between measurements to ensure variability is captured
 
-    avg_refresh_rate = np.mean(refresh_rates)
+    avg_refresh_rate = round(np.mean(refresh_rates), 0)
     print(f"Average Measured Refresh Rate: {avg_refresh_rate:.2f} Hz")
 
     # Calculate all possible frequencies, rounded to 2 decimal places
