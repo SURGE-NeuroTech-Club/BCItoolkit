@@ -1,5 +1,5 @@
 import brainflow
-from brainflow.board_shim import BoardShim, BrainFlowInputParams, BrainFlowError
+from brainflow.board_shim import BoardShim, BrainFlowInputParams, BrainFlowError, BoardIds
 
 class BrainFlowBoardSetup:
     """

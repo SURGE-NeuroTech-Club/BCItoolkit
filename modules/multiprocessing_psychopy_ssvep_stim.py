@@ -5,7 +5,36 @@ import warnings
 warnings.filterwarnings("ignore", message="elementwise comparison failed; returning scalar instead")
 
 class SSVEPStimulus:
+    """
+    Class to create and run a Steady-State Visual Evoked Potential (SSVEP) stimulus using PsychoPy.
+    
+    Attributes:
+        box_frequencies (list): List of desired frequencies for the stimulus boxes.
+        box_texts (list): List of texts to display inside the boxes.
+        box_text_indices (list): List of indices corresponding to the boxes that should display text.
+        display_mode (str): Mode of display ('freq', 'text', 'both', or None).
+        win (visual.Window): PsychoPy window object.
+        refresh_rate (float): Measured refresh rate of the display.
+        actual_frequencies (list): List of actual frequencies adjusted to the refresh rate.
+        boxes (list): List of dictionaries containing box information.
+        frame_count (int): Counter for the number of frames displayed.
+        has_started (bool): Flag indicating whether the stimulus has started.
+        start_button (visual.Rect): Start button rectangle.
+        start_text (visual.TextStim): Start button text.
+    """
+    
     def __init__(self, box_frequencies, box_texts=None, box_text_indices=None, display_index=0, display_mode=None, monitor_name='testMonitor'):
+        """
+        Initializes the SSVEPStimulus class with the given parameters.
+        
+        Args:
+            box_frequencies (list): List of desired frequencies for the stimulus boxes.
+            box_texts (list, optional): List of texts to display inside the boxes. Defaults to None.
+            box_text_indices (list, optional): List of indices corresponding to the boxes that should display text. Defaults to None.
+            display_index (int, optional): Index of the display screen to use. Defaults to 0.
+            display_mode (str, optional): Mode of display ('freq', 'text', 'both', or None). Defaults to None.
+            monitor_name (str, optional): Name of the monitor configuration to use. Defaults to 'testMonitor'.
+        """
         self.box_frequencies = box_frequencies
         self.box_texts = box_texts
         self.box_text_indices = box_text_indices
@@ -73,23 +102,28 @@ class SSVEPStimulus:
                 freq_text_stim = visual.TextStim(win=self.win, text=f"{self.actual_frequencies[idx]:.2f} Hz", color='black', pos=pos)
                 box_info["text"] = freq_text_stim
 
-            if self.display_mode in ["both"] and self.box_texts and idx in box_text_indices:
+            if self.display_mode in ["both", "text"] and self.box_texts and idx in box_text_indices:
                 box_text = box_texts[box_text_indices.index(idx)]
-                box_text_stim = visual.TextStim(win=self.win, text=box_text, color='black', pos=(pos[0], pos[1] + 30))
-                box_info["box_text"] = box_text_stim
-
-            if self.display_mode in ["text"] and self.box_texts and idx in box_text_indices:
-                box_text = box_texts[box_text_indices.index(idx)]
-                box_text_stim = visual.TextStim(win=self.win, text=box_text, color='black', pos=pos)
+                text_pos = (pos[0], pos[1] + 30) if self.display_mode == "both" else pos
+                box_text_stim = visual.TextStim(win=self.win, text=box_text, color='black', pos=text_pos)
                 box_info["box_text"] = box_text_stim
             
             self.boxes.append(box_info)
 
-        self.has_started = False  # Renamed to avoid conflict
+        self.has_started = False
         self.start_button = visual.Rect(win=self.win, width=300, height=100, fillColor='green', pos=(0, 0))
         self.start_text = visual.TextStim(win=self.win, text='Press Space/Enter to Start', color='white', pos=(0, 0))
 
     def calculate_actual_frequencies(self, desired_frequencies):
+        """
+        Calculates the actual frequencies based on the desired frequencies and the refresh rate.
+        
+        Args:
+            desired_frequencies (list): List of desired frequencies.
+        
+        Returns:
+            list: List of actual frequencies adjusted to the refresh rate.
+        """
         actual_frequencies = []
         for freq in desired_frequencies:
             frames_per_cycle = round(self.refresh_rate / freq)
@@ -97,11 +131,10 @@ class SSVEPStimulus:
             actual_frequencies.append(actual_freq)
         return actual_frequencies
 
-    def start(self):
-        self.has_started = True
-        self.run()
-
     def run(self):
+        """
+        Runs the SSVEP stimulus, handling the display and flickering of the boxes.
+        """
         while True:
             keys = event.getKeys()
             if 'escape' in keys:
@@ -139,15 +172,43 @@ class SSVEPStimulus:
         core.quit()
 
     def stop(self):
+        """
+        Stops the SSVEP stimulus and closes the PsychoPy window.
+        """
         self.has_started = False
         self.win.close()
         core.quit()
 
 def start_ssvep_stimulus(box_frequencies, box_texts=None, box_text_indices=None, display_index=0, display_mode=None, monitor_name='testMonitor'):
+    """
+    Starts the SSVEP stimulus in the current process.
+    
+    Args:
+        box_frequencies (list): List of desired frequencies for the stimulus boxes.
+        box_texts (list, optional): List of texts to display inside the boxes. Defaults to None.
+        box_text_indices (list, optional): List of indices corresponding to the boxes that should display text. Defaults to None.
+        display_index (int, optional): Index of the display screen to use. Defaults to 0.
+        display_mode (str, optional): Mode of display ('freq', 'text', 'both', or None). Defaults to None.
+        monitor_name (str, optional): Name of the monitor configuration to use. Defaults to 'testMonitor'.
+    """
     stimulus = SSVEPStimulus(box_frequencies, box_texts, box_text_indices, display_index, display_mode, monitor_name)
-    stimulus.start()
+    stimulus.run()
 
 def run_ssvep_stimulus_in_process(box_frequencies, box_texts=None, box_text_indices=None, display_index=0, display_mode=None, monitor_name='testMonitor'):
+    """
+    Starts the SSVEP stimulus in a separate process.
+    
+    Args:
+        box_frequencies (list): List of desired frequencies for the stimulus boxes.
+        box_texts (list, optional): List of texts to display inside the boxes. Defaults to None.
+        box_text_indices (list, optional): List of indices corresponding to the boxes that should display text. Defaults to None.
+        display_index (int, optional): Index of the display screen to use. Defaults to 0.
+        display_mode (str, optional): Mode of display ('freq', 'text', 'both', or None). Defaults to None.
+        monitor_name (str, optional): Name of the monitor configuration to use. Defaults to 'testMonitor'.
+    
+    Returns:
+        Process: The process running the SSVEP stimulus.
+    """
     stimulus_process = Process(target=start_ssvep_stimulus, args=(box_frequencies, box_texts, box_text_indices, display_index, display_mode, monitor_name))
     stimulus_process.start()
     return stimulus_process
@@ -159,13 +220,13 @@ if __name__ == "__main__":
     box_text_indices = [0, 1, 2, 3]
     display_index = 0
     display_mode = 'both'
-    monitor_name = 'testMonitor'
+    # monitor_name = 'testMonitor'
 
     # Using `run_ssvep_stimulus_in_process`:
-    # run_ssvep_stimulus_in_process(box_frequencies, 
-    #                                 box_texts=box_texts, 
-    #                                 box_text_indices=box_text_indices,          
-    #                                 display_mode=display_mode)
+    run_ssvep_stimulus_in_process(box_frequencies, 
+                                    box_texts=box_texts, 
+                                    box_text_indices=box_text_indices,          
+                                    display_mode=display_mode)
     
     # Using `start_ssvep_stimulus`: (blocking!)
     # start_ssvep_stimulus(box_frequencies, 
