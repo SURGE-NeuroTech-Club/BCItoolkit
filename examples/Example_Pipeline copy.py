@@ -33,6 +33,8 @@ def main():
     board.setup()
 
     segmentation_time_wait = Segmentation(board, segment_duration=2)
+    
+
     actual_freqs = frequencies
 
     # Initialize the classifier

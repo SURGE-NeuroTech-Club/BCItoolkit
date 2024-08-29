@@ -124,6 +124,7 @@ class SSVEPStimulus:
         Returns:
             list: List of actual frequencies adjusted to the refresh rate.
         """
+        global actual_frequencies
         actual_frequencies = []
         for freq in desired_frequencies:
             frames_per_cycle = round(self.refresh_rate / freq)
@@ -179,9 +180,9 @@ class SSVEPStimulus:
         self.win.close()
         core.quit()
 
-def start_ssvep_stimulus(box_frequencies, box_texts=None, box_text_indices=None, display_index=0, display_mode=None, monitor_name='testMonitor'):
+def run_ssvep_stimulus(box_frequencies, box_texts=None, box_text_indices=None, display_index=0, display_mode=None, monitor_name='testMonitor', in_process=True):
     """
-    Starts the SSVEP stimulus in the current process.
+    Starts the SSVEP stimulus either in the current process or in a separate process.
     
     Args:
         box_frequencies (list): List of desired frequencies for the stimulus boxes.
@@ -190,28 +191,23 @@ def start_ssvep_stimulus(box_frequencies, box_texts=None, box_text_indices=None,
         display_index (int, optional): Index of the display screen to use. Defaults to 0.
         display_mode (str, optional): Mode of display ('freq', 'text', 'both', or None). Defaults to None.
         monitor_name (str, optional): Name of the monitor configuration to use. Defaults to 'testMonitor'.
-    """
-    stimulus = SSVEPStimulus(box_frequencies, box_texts, box_text_indices, display_index, display_mode, monitor_name)
-    stimulus.run()
-
-def run_ssvep_stimulus_in_process(box_frequencies, box_texts=None, box_text_indices=None, display_index=0, display_mode=None, monitor_name='testMonitor'):
-    """
-    Starts the SSVEP stimulus in a separate process.
-    
-    Args:
-        box_frequencies (list): List of desired frequencies for the stimulus boxes.
-        box_texts (list, optional): List of texts to display inside the boxes. Defaults to None.
-        box_text_indices (list, optional): List of indices corresponding to the boxes that should display text. Defaults to None.
-        display_index (int, optional): Index of the display screen to use. Defaults to 0.
-        display_mode (str, optional): Mode of display ('freq', 'text', 'both', or None). Defaults to None.
-        monitor_name (str, optional): Name of the monitor configuration to use. Defaults to 'testMonitor'.
+        in_process (bool, optional): Whether to run the stimulus in the current process. Defaults to True.
     
     Returns:
-        Process: The process running the SSVEP stimulus.
+        Process or None: The process running the SSVEP stimulus if in_process is False, otherwise None.
     """
-    stimulus_process = Process(target=start_ssvep_stimulus, args=(box_frequencies, box_texts, box_text_indices, display_index, display_mode, monitor_name))
-    stimulus_process.start()
-    return stimulus_process
+    def start_ssvep_stimulus():
+        stimulus = SSVEPStimulus(box_frequencies, box_texts, box_text_indices, display_index, display_mode, monitor_name)
+        stimulus.run()
+
+    if in_process == True:
+        stimulus_process = Process(target=start_ssvep_stimulus)
+        stimulus_process.start()
+        return stimulus_process
+    else:
+        stimulus = SSVEPStimulus(box_frequencies, box_texts, box_text_indices, display_index, display_mode, monitor_name)
+        stimulus.run()
+        return None
 
 # Automatically start the SSVEP stimulus in a separate process when the module is imported
 if __name__ == "__main__":
@@ -220,13 +216,20 @@ if __name__ == "__main__":
     box_text_indices = [0, 1, 2, 3]
     display_index = 0
     display_mode = 'both'
-    # monitor_name = 'testMonitor'   
+    # monitor_name = 'testMonitor'
 
-    # Using `run_ssvep_stimulus_in_process`:
-    run_ssvep_stimulus_in_process(box_frequencies, 
+    run_ssvep_stimulus(box_frequencies, 
                                     box_texts=box_texts, 
                                     box_text_indices=box_text_indices,          
                                     display_mode=display_mode)
+    
+    print(actual_frequencies)
+
+    # Using `run_ssvep_stimulus_in_process`:
+    # run_ssvep_stimulus_in_process(box_frequencies, 
+    #                                 box_texts=box_texts, 
+    #                                 box_text_indices=box_text_indices,          
+    #                                 display_mode=display_mode)
     
     # Using `start_ssvep_stimulus`: (blocking!)
     # start_ssvep_stimulus(box_frequencies, 
