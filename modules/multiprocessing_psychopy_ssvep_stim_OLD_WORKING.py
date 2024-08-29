@@ -1,7 +1,6 @@
 from psychopy import visual, event, core, monitors
 import numpy as np
 from multiprocessing import Process
-import time
 import warnings
 warnings.filterwarnings("ignore", message="elementwise comparison failed; returning scalar instead")
 
@@ -24,7 +23,7 @@ class SSVEPStimulus:
         start_text (visual.TextStim): Start button text.
     """
     
-    def __init__(self, box_frequencies, queue,  box_texts=None, box_text_indices=None, display_index=0, display_mode=None, monitor_name='testMonitor'):
+    def __init__(self, box_frequencies, box_texts=None, box_text_indices=None, display_index=0, display_mode=None, monitor_name='testMonitor'):
         """
         Initializes the SSVEPStimulus class with the given parameters.
         
@@ -40,7 +39,6 @@ class SSVEPStimulus:
         self.box_texts = box_texts
         self.box_text_indices = box_text_indices
         self.display_mode = display_mode
-        self.queue = queue
 
         if box_texts and len(box_texts) != len(box_text_indices):
             raise ValueError("The length of box_texts and box_text_indices must be the same if box_texts is provided.")
@@ -126,13 +124,11 @@ class SSVEPStimulus:
         Returns:
             list: List of actual frequencies adjusted to the refresh rate.
         """
-        global actual_frequencies
         actual_frequencies = []
         for freq in desired_frequencies:
             frames_per_cycle = round(self.refresh_rate / freq)
             actual_freq = round(self.refresh_rate / frames_per_cycle, 2)
             actual_frequencies.append(actual_freq)
-        self.queue.put(actual_frequencies)
         return actual_frequencies
 
     def run(self):
@@ -232,9 +228,6 @@ if __name__ == "__main__":
                                     box_text_indices=box_text_indices,          
                                     display_mode=display_mode)
     
-    time.sleep(20)
-    print(actual_frequencies)
-
     # Using `start_ssvep_stimulus`: (blocking!)
     # start_ssvep_stimulus(box_frequencies, 
     #                     box_texts=box_texts, 
