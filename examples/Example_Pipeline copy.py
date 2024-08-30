@@ -9,7 +9,7 @@ from modules.brainflow_stream import *
 from modules.filtering import *
 from modules.segmentation import *
 from modules.classification import *
-from modules.multiprocessing_psychopy_ssvep_stim import *
+from modules.ssvep_stim import *
 
 # Setting variables:
 serial_port = 'COM4'

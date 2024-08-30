@@ -220,7 +220,7 @@ if __name__ == "__main__":
     monitor_name = 'testMonitor'
     
     
-    # Using default method: (blocking!) --> use this if running the SSVEPStimulus from a seperate script!
+    # Using default method: (blocking!) -> use this if running the SSVEPStimulus from a seperate script!
     # start_ssvep_stimulus(box_frequencies=box_frequencies, 
     #                      box_texts=box_texts, 
     #                      box_text_indices=box_text_indices,
@@ -229,7 +229,7 @@ if __name__ == "__main__":
     #                      monitor_name = monitor_name)
     
     
-    # Start the SSVEP stimulus in a separate process and get the actual frequencies
+    # Start the SSVEP stimulus in a separate process -> use this if running the SSVEPStimulus in the same script as EEG processing or other code
     # Create an instance of the SSVEPStimulusRunner class
     stimulus_process = SSVEPStimulusRunner(box_frequencies=box_frequencies, 
                                     box_texts=box_texts, 
