@@ -2,34 +2,24 @@
 
 The goal of this repo/library is to make a toolkit for making SSVEP/ERP-based brain-computer interfaces accessible for those who don't have much/any experience.
 
-**General:**
-- [ ] Test & integrate multiprocessing into the stimulus presentation & processing bits
-  - Example_pipeline_*.py/BCIpipeline_multiprocessing.py
-  - Create a `BCIPipeline` class to handle the full integration of an online BCI??
-
-**Classification:***
-- [ ] Test new classification module
-  - [ ] CCA
-  - [ ] FBCCA
-- [ ] Add (+ test other classifiers)
-  - [ ] LDA
-  - [ ] LR
-  - [ ] SVM
-
-**Preprocessing:**
+**Testing:**
 - [X] Split into Segmenting, Filters, Other(?)
   - [ ] Test Segmentation.py
     - Overlapping data issues? -> better way to implement segmentation? (just have `get_data` module??)
-  - [X] Test Filtering.py -> validate the results in processing_test.ipynb
+  - [ ] Test Filtering.py -> validate the results in processing_test.ipynb
+- [ ] Test the new `SSVEP_stim.py` for flicker frequency!!
+- [ ] Test new classification module
+  - [ ] CCA
+  - [ ] FBCCA
+- [ ] Test the entire example pipeline [`testing/Full_Pipeline_Test.ipynb`] with a cyton board!
+
+
+**Feature Timeline:**
 - Artifact removal  
   - Based on amplitude
   - EOG artifact removal?
-
-**Stim_Pres:**
-
-
-#### Completed:
-- [X] Add function to measure refresh rate and give a list of all possible flicker frequencies for your screen!
+- ERP_stim (large host of challenges with markers and training data requirements)
+- Classification methods for ERPs
 
 
 # Notes:

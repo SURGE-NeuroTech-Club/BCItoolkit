@@ -1,7 +1,7 @@
 import numpy as np
 from brainflow.data_filter import DataFilter, FilterTypes
 
-class Filtering:
+class BF_Filtering:
     def __init__(self, sampling_rate):
         self.sampling_rate = sampling_rate
 
@@ -171,3 +171,44 @@ class Filtering:
                                        kwargs.get("order", 4))
         else:
             raise ValueError("Invalid filter type. Options are 'bandpass', 'highpass', 'lowpass', 'notch', 'bandstop'.")
+
+
+if __name__ == "__main__":
+    # Assuming the BF_Filtering class is defined as provided
+
+    # Create an instance of the BF_Filtering class with a sampling rate of 250 Hz
+    sampling_rate = 250
+    filtering = BF_Filtering(sampling_rate)
+
+    # Generate some example EEG data (e.g., 8 channels, 1000 samples)
+    eeg_data = np.random.randn(8, 1000)
+
+    # Apply a bandpass filter to the EEG data
+    lowcut = 1.0  # Low cut frequency in Hz
+    highcut = 50.0  # High cut frequency in Hz
+    filtered_data_bandpass = filtering.filter_data(eeg_data, filter_type="bandpass", lowcut=lowcut, highcut=highcut)
+
+    # Apply a highpass filter to the EEG data
+    lowcut = 1.0  # Low cut frequency in Hz
+    filtered_data_highpass = filtering.filter_data(eeg_data, filter_type="highpass", lowcut=lowcut)
+
+    # Apply a lowpass filter to the EEG data
+    highcut = 50.0  # High cut frequency in Hz
+    filtered_data_lowpass = filtering.filter_data(eeg_data, filter_type="lowpass", highcut=highcut)
+
+    # Apply a notch filter to the EEG data to remove 50 Hz power line noise
+    notch_freq = 50.0  # Notch frequency in Hz
+    filtered_data_notch = filtering.filter_data(eeg_data, filter_type="notch", notch_freq=notch_freq)
+
+    # Apply a bandstop filter to the EEG data
+    lowcut = 48.0  # Low cut frequency in Hz
+    highcut = 52.0  # High cut frequency in Hz
+    filtered_data_bandstop = filtering.filter_data(eeg_data, filter_type="bandstop", lowcut=lowcut, highcut=highcut)
+    
+    # Print the shapes of the filtered data to verify the filtering process
+    print("Original Data (first 10 samples of channel 0):", eeg_data[0, :10])
+    print("Bandpass Filtered Data (first 10 samples of channel 0):", filtered_data_bandpass[0, :10])
+    print("Highpass Filtered Data (first 10 samples of channel 0):", filtered_data_highpass[0, :10])
+    print("Lowpass Filtered Data (first 10 samples of channel 0):", filtered_data_lowpass[0, :10])
+    print("Notch Filtered Data (first 10 samples of channel 0):", filtered_data_notch[0, :10])
+    print("Bandstop Filtered Data (first 10 samples of channel 0):", filtered_data_bandstop[0, :10])
