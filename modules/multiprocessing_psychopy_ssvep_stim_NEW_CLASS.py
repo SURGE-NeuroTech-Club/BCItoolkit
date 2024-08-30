@@ -24,7 +24,7 @@ class SSVEPStimulus:
         start_text (visual.TextStim): Start button text.
     """
     
-    def __init__(self, box_frequencies, queue, box_texts=None, box_text_indices=None, display_index=0, display_mode=None, monitor_name='testMonitor'):
+    def __init__(self, box_frequencies, queue=None, box_texts=None, box_text_indices=None, display_index=0, display_mode=None, monitor_name='testMonitor'):
         """
         Initializes the SSVEPStimulus class with the given parameters.
         
@@ -126,13 +126,13 @@ class SSVEPStimulus:
         Returns:
             list: List of actual frequencies adjusted to the refresh rate.
         """
-        global actual_frequencies
         actual_frequencies = []
         for freq in desired_frequencies:
             frames_per_cycle = round(self.refresh_rate / freq)
             actual_freq = round(self.refresh_rate / frames_per_cycle, 2)
             actual_frequencies.append(actual_freq)
-        self.queue.put(actual_frequencies)
+        if self.queue:
+            self.queue.put(actual_frequencies)
         return actual_frequencies
 
     def run(self):
@@ -183,13 +183,13 @@ class SSVEPStimulus:
         self.win.close()
         core.quit()
 
-def start_ssvep_stimulus(box_frequencies, queue, box_texts=None, box_text_indices=None, display_index=0, display_mode=None, monitor_name='testMonitor'):
+def start_ssvep_stimulus(box_frequencies, queue=None, box_texts=None, box_text_indices=None, display_index=0, display_mode=None, monitor_name='testMonitor'):
     """
     Starts the SSVEP stimulus in the current process.
     
     Args:
         box_frequencies (list): List of desired frequencies for the stimulus boxes.
-        queue (Queue): A multiprocessing queue for inter-process communication.
+        queue (Queue, optional): A multiprocessing queue for inter-process communication. Defaults to None.
         box_texts (list, optional): List of texts to display inside the boxes. Defaults to None.
         box_text_indices (list, optional): List of indices corresponding to the boxes that should display text. Defaults to None.
         display_index (int, optional): Index of the display screen to use. Defaults to 0.
@@ -199,26 +199,64 @@ def start_ssvep_stimulus(box_frequencies, queue, box_texts=None, box_text_indice
     stimulus = SSVEPStimulus(box_frequencies, queue, box_texts, box_text_indices, display_index, display_mode, monitor_name)
     stimulus.run()
 
-def run_ssvep_stimulus_in_process(box_frequencies, box_texts=None, box_text_indices=None, display_index=0, display_mode=None, monitor_name='testMonitor'):
-    """
-    Starts the SSVEP stimulus in a separate process.
-    
-    Args:
-        box_frequencies (list): List of desired frequencies for the stimulus boxes.
-        box_texts (list, optional): List of texts to display inside the boxes. Defaults to None.
-        box_text_indices (list, optional): List of indices corresponding to the boxes that should display text. Defaults to None.
-        display_index (int, optional): Index of the display screen to use. Defaults to 0.
-        display_mode (str, optional): Mode of display ('freq', 'text', 'both', or None). Defaults to None.
-        monitor_name (str, optional): Name of the monitor configuration to use. Defaults to 'testMonitor'.
-    
-    Returns:
-        tuple: A tuple containing the process running the SSVEP stimulus and the queue for inter-process communication.
-    """
-    queue = Queue()  # Create a Queue -> will be given actual_frequencies
-    stimulus_process = Process(target=start_ssvep_stimulus, args=(box_frequencies, queue, box_texts, box_text_indices, display_index, display_mode, monitor_name))
-    stimulus_process.start()
-    return stimulus_process, queue  # Return the queue as well
+class SSVEPStimulusRunner:
+    def __init__(self, box_frequencies, box_texts=None, box_text_indices=None, display_index=0, display_mode=None, monitor_name='testMonitor'):
+        """
+        Initializes the SSVEPStimulusRunner class with the given parameters.
+        
+        Args:
+            box_frequencies (list): List of desired frequencies for the stimulus boxes.
+            box_texts (list, optional): List of texts to display inside the boxes. Defaults to None.
+            box_text_indices (list, optional): List of indices corresponding to the boxes that should display text. Defaults to None.
+            display_index (int, optional): Index of the display screen to use. Defaults to 0.
+            display_mode (str, optional): Mode of display ('freq', 'text', 'both', or None). Defaults to None.
+            monitor_name (str, optional): Name of the monitor configuration to use. Defaults to 'testMonitor'.
+        """
+        self.box_frequencies = box_frequencies
+        self.box_texts = box_texts
+        self.box_text_indices = box_text_indices
+        self.display_index = display_index
+        self.display_mode = display_mode
+        self.monitor_name = monitor_name
+        self.queue = Queue()
+        self.process = None
 
+    def start(self):
+        """
+        Starts the SSVEP stimulus in a separate process.
+        """
+        self.process = Process(target=start_ssvep_stimulus, args=(self.box_frequencies, self.queue, self.box_texts, self.box_text_indices, self.display_index, self.display_mode, self.monitor_name))
+        self.process.start()
+
+    def get_actual_frequencies(self):
+        """
+        Retrieves the actual frequencies from the queue.
+        
+        Returns:
+            list: A list of actual frequencies adjusted to the refresh rate.
+        """
+        time.sleep(5)  # Wait for some time or until the frequencies are available
+        actual_freqs = self.queue.get()  # Retrieve the frequencies from the queue
+        return actual_freqs
+
+    def stop(self):
+        """
+        Stops the SSVEP stimulus process.
+        """
+        if self.process and self.process.is_alive():
+            self.process.terminate()
+            self.process.join()
+
+    def is_running(self):
+        """
+        Checks if the SSVEP stimulus process is still running.
+        
+        Returns:
+            bool: True if the process is running, False otherwise.
+        """
+        return self.process.is_alive() if self.process else False
+
+# Example usage
 if __name__ == "__main__":
     box_frequencies = [9.25, 11.25, 13.25, 15.25]
     box_texts = ['Right', 'Left', 'Up', 'Down']
@@ -226,21 +264,47 @@ if __name__ == "__main__":
     display_index = 0
     display_mode = 'both'
     
-    # Start the SSVEP stimulus in a separate process
-    # process, queue = run_ssvep_stimulus_in_process(box_frequencies, 
-    #                                                 box_texts=box_texts, 
-    #                                                 box_text_indices=box_text_indices,          
-    #                                                 display_mode=display_mode)
+    # Create an instance of the SSVEPStimulusRunner class
+    stimulus = SSVEPStimulusRunner(box_frequencies, box_texts, box_text_indices, display_index, display_mode)
     
-    # # Wait for some time or until the frequencies are available
-    # time.sleep(5)  # Adjust this timing as needed
-    # actual_frequencies = queue.get()  # Retrieve the frequencies from the queue
-    # print("Actual Frequencies:", actual_frequencies)
+    # Start the SSVEP stimulus
+    stimulus.start()
     
+    # Get the actual frequencies
+    actual_frequencies = stimulus.get_actual_frequencies()
+    print("Actual Frequencies:", actual_frequencies)
+    
+    # Check if the process is still running
+    if stimulus.is_running():
+        print("Process is still running.")
+    else:
+        print("Process has finished.")
+    
+    time.sleep(5)
+    
+    # Stop the process if needed
+    stimulus.stop()
+    print("Process terminated.")
+
+# # Example usage
+# if __name__ == "__main__":
+#     box_frequencies = [9.25, 11.25, 13.25, 15.25]
+#     box_texts = ['Right', 'Left', 'Up', 'Down']
+#     box_text_indices = [0, 1, 2, 3]
+#     display_index = 0
+#     display_mode = 'both'
+    
+#     # Start the SSVEP stimulus in a separate process and get the actual frequencies
+#     actual_frequencies = run_ssvep_stimulus_in_process(box_frequencies, 
+#                                                        box_texts=box_texts, 
+#                                                        box_text_indices=box_text_indices,          
+#                                                        display_mode=display_mode)
+#     print("Actual Frequencies:", actual_frequencies)
+
     # process.join()  # Wait for the process to finish
     
-    # Using default class method: (blocking!)
-    start_ssvep_stimulus(box_frequencies, 
-                             box_texts=box_texts, 
-                             box_text_indices=box_text_indices,          
-                             display_mode=display_mode)
+    # Using default class method: (blocking!) --> use this if running the SSVEPStimulus from a seperate script!
+    # start_ssvep_stimulus(box_frequencies, 
+    #                          box_texts=box_texts, 
+    #                          box_text_indices=box_text_indices,          
+    #                          display_mode=display_mode)
