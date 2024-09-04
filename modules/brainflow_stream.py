@@ -8,6 +8,7 @@ class BrainFlowBoardSetup:
     Also allows for use of all BoardShim attributes (even if not explicitly defined in this class).
     
     Attributes:
+        name (str): A user-friendly name or identifier for the board setup instance.
         board_id (int): The ID of the BrainFlow board to use.
         serial_port (str): The serial port to which the BrainFlow board is connected.
         params (BrainFlowInputParams): Instance of BrainFlowInputParams representing the board's input parameters.
@@ -18,17 +19,25 @@ class BrainFlowBoardSetup:
         sampling_rate (int): Sampling rate of the board.
     """
 
-    def __init__(self, board_id, serial_port=None, **kwargs):
+    _id_counter = 0  # Class-level variable to assign default IDs
+
+    def __init__(self, board_id, serial_port=None, name=None, **kwargs):
         """
         Initializes the BrainFlowBoardSetup class with the given board ID, serial port, and additional parameters.
 
         Args:
             board_id (int): The ID of the BrainFlow board.
             serial_port (str): The serial port to which the BrainFlow board is connected.
+            name (str): A user-friendly name or identifier for this instance. Defaults to 'Board X'.
             **kwargs: Additional keyword arguments to be set as attributes on the BrainFlowInputParams instance.
         """
         self.board_id = board_id
         self.serial_port = serial_port
+
+        # Assign default name if not provided, based on the class-level ID counter
+        self.name = name or f"Board {BrainFlowBoardSetup._id_counter}"
+        BrainFlowBoardSetup._id_counter += 1
+
         self.params = BrainFlowInputParams()
         self.params.serial_port = self.serial_port
         self.eeg_channels = BoardShim.get_eeg_channels(self.board_id)
@@ -56,9 +65,12 @@ class BrainFlowBoardSetup:
             list: A list of dictionaries containing 'port', 'serial_number', and 'description' for each compatible device.
                   Returns an empty list if no devices are found.
         """
+        # Suppress logs from BrainFlow using internal logging level control
+        BoardShim.disable_board_logger()  # Disable all logs
+
         ports = serial.tools.list_ports.comports()
         compatible_ports = []
-        
+
         for port in ports:
             try:
                 self.params.serial_port = port.device
@@ -72,14 +84,17 @@ class BrainFlowBoardSetup:
                     'serial_number': port.serial_number,
                     'description': port.description
                 }
-                print(f"Compatible device found at {port.device}, Serial Number: {port.serial_number}, Description: {port.description}")
+                print(f"Compatible device found: Serial Number: {port.serial_number}, Description: {port.description}")
                 compatible_ports.append(device_info)
             except BrainFlowError:
                 continue
         
         if not compatible_ports:
-            print("No compatible BrainFlow devices found.")
+            print(f"No compatible BrainFlow devices found.")
         
+        # Re-enable logging after checking ports
+        BoardShim.enable_board_logger()
+
         return compatible_ports
     
     def setup(self):
@@ -93,12 +108,12 @@ class BrainFlowBoardSetup:
             BrainFlowError: If the board fails to prepare the session or start streaming.
         """
         if self.serial_port is None:
-            print("No serial port provided, attempting to auto-detect...")
+            print(f"No serial port provided, attempting to auto-detect...")
             ports_info = self.find_device_ports()
             if ports_info:
                 self.serial_port = ports_info[0]['port']  # Default to the first detected port
             else:
-                print("No compatible device found. Setup failed.")
+                print(f"No compatible device found. Setup failed.")
                 return
 
         self.params.serial_port = self.serial_port
@@ -108,9 +123,9 @@ class BrainFlowBoardSetup:
             self.session_prepared = True
             self.board.start_stream(450000)
             self.streaming = True  # Flag to indicate if streaming is active
-            print("Board setup and streaming started successfully")
+            print(f"[{self.name}, {self.serial_port}] Board setup and streaming started successfully.")
         except BrainFlowError as e:
-            print(f"Error setting up board: {e}")
+            print(f"[{self.name}, {self.serial_port}] Error setting up board: {e}")
             self.board = None
     
     def show_params(self):
@@ -120,7 +135,7 @@ class BrainFlowBoardSetup:
         This method provides a simple way to inspect the current input parameters
         being used to configure the BrainFlow board.
         """
-        print("Current BrainFlow Input Parameters:")
+        print(f"[{self.name}] Current BrainFlow Input Parameters:")
         for key, value in vars(self.params).items():
             print(f"{key}: {value}")
 
@@ -137,7 +152,7 @@ class BrainFlowBoardSetup:
         if self.board is not None:
             return self.board.get_board_data()
         else:
-            print("Board is not set up")
+            print(f"[{self.name}] Board is not set up.")
             return None
         
     def insert_marker(self, marker, verbose=True):
@@ -156,11 +171,11 @@ class BrainFlowBoardSetup:
             try:
                 self.board.insert_marker(marker)
                 if self.verbose:
-                    print(f"Marker {marker} inserted successfully")
+                    print(f"[{self.name}] Marker {marker} inserted successfully.")
             except BrainFlowError as e:
-                print(f"Error inserting marker: {e}")
+                print(f"[{self.name}] Error inserting marker: {e}")
         else:
-            print("Board is not streaming, cannot insert marker")
+            print(f"[{self.name}] Board is not streaming, cannot insert marker.")
     
     def stop(self):
         """
@@ -174,14 +189,14 @@ class BrainFlowBoardSetup:
                 if self.streaming:
                     self.board.stop_stream()
                     self.streaming = False
-                    print("\nStreaming stopped")
+                    print(f"[{self.name}, {self.serial_port}] Streaming stopped.")
                 if self.session_prepared:
                     self.board.release_session()
                     self.session_prepared = False
-                    print("Session released")
+                    print(f"[{self.name}, {self.serial_port}] Session released.")
         except BrainFlowError as e:
             if "BOARD_NOT_CREATED_ERROR:15" not in str(e):
-                print(f"Error stopping board: {e}")
+                print(f"[{self.name}, {self.serial_port}] Error stopping board: {e}")
 
     def __getattr__(self, name):
         """
@@ -211,48 +226,108 @@ class BrainFlowBoardSetup:
         """
         self.stop()
 
+#######
+# Example streaming from a single board
+######
 if __name__ == "__main__":
     import time
 
     board_id_cyton = BoardIds.CYTON_BOARD.value
 
-    # Instantiate BrainFlowBoardSetup with verbose enabled for detailed output
-    brainflow_setup_detector = BrainFlowBoardSetup(board_id=board_id_cyton)
+    brainflow_board = BrainFlowBoardSetup(board_id=board_id_cyton)
 
-    # Find all compatible devices
-    compatible_ports = brainflow_setup_detector.find_device_ports()
+    brainflow_board.setup()
 
-    # Check if at least two devices are found
-    if len(compatible_ports) >= 2:
-        serial_port_1 = compatible_ports[0]['port']
-        serial_port_2 = compatible_ports[1]['port']
+    # Stream from both boards for 5 seconds
+    time.sleep(5)
+
+    # Retrieve and print data from the second board
+    data = brainflow_board.get_board_data()
+    print(f"Data from brainflow_board: {data}")
+
+    # Stop the streaming and release the sessions for both boards
+    brainflow_board.stop()
+
+
+############
+# Example streaming from two boards simultaneously
+###########
+## Method 1 - automatically finding multiple devices and starting them
+# if __name__ == "__main__":
+#     import time
+
+#     board_id_cyton = BoardIds.CYTON_BOARD.value
+
+#     # Instantiate BrainFlowBoardSetup for the first board with verbose=False to suppress logs
+#     brainflow_setup_1 = BrainFlowBoardSetup(board_id=board_id_cyton)
+
+#     # Instantiate BrainFlowBoardSetup for the second board with verbose=True for detailed output
+#     brainflow_setup_2 = BrainFlowBoardSetup(board_id=board_id_cyton)
+
+#     # Set up the first board and start streaming
+#     brainflow_setup_1.setup()
+
+#     # Set up the second board and start streaming (with detailed logs)
+#     brainflow_setup_2.setup()
+
+#     # Stream for 5 seconds
+#     time.sleep(5)
+
+#     # Retrieve and print data from the first board
+#     data_1 = brainflow_setup_1.get_board_data()
+#     print(f"Data from board 1: {data_1}")
+
+#     # Retrieve and print data from the second board
+#     data_2 = brainflow_setup_2.get_board_data()
+#     print(f"Data from board 2: {data_2}")
+
+#     # Stop streaming and release both boards
+#     brainflow_setup_1.stop()
+#     brainflow_setup_2.stop()
+
+## Method 2 - finding compatible devices and then iterating through them
+# if __name__ == "__main__":
+#     import time
+
+#     board_id_cyton = BoardIds.CYTON_BOARD.value
+
+#     # Instantiate BrainFlowBoardSetup with verbose enabled for detailed output
+#     brainflow_setup_detector = BrainFlowBoardSetup(board_id=board_id_cyton)
+
+#     # Find all compatible devices
+#     compatible_ports = brainflow_setup_detector.find_device_ports()
+
+#     # Check if at least two devices are found
+#     if len(compatible_ports) >= 2:
+#         serial_port_1 = compatible_ports[0]['port']
+#         serial_port_2 = compatible_ports[1]['port']
         
-        # Instantiate BrainFlowBoardSetup for the first board
-        brainflow_setup_1 = BrainFlowBoardSetup(board_id=board_id_cyton, serial_port=serial_port_1)
+#         # Instantiate BrainFlowBoardSetup for the first board
+#         brainflow_setup_1 = BrainFlowBoardSetup(board_id=board_id_cyton, serial_port=serial_port_1)
 
-        # Instantiate BrainFlowBoardSetup for the second board
-        brainflow_setup_2 = BrainFlowBoardSetup(board_id=board_id_cyton, serial_port=serial_port_2)
+#         # Instantiate BrainFlowBoardSetup for the second board
+#         brainflow_setup_2 = BrainFlowBoardSetup(board_id=board_id_cyton, serial_port=serial_port_2)
 
-        # Set up the first board and start streaming
-        brainflow_setup_1.setup()
+#         # Set up the first board and start streaming
+#         brainflow_setup_1.setup()
 
-        # Set up the second board and start streaming
-        brainflow_setup_2.setup()
+#         # Set up the second board and start streaming
+#         brainflow_setup_2.setup()
 
-        # Stream from both boards for 5 seconds
-        time.sleep(5)
+#         # Stream from both boards for 5 seconds
+#         time.sleep(5)
 
-        # Retrieve and print data from the first board
-        data_1 = brainflow_setup_1.get_board_data()
-        print(f"Data from board 1: {data_1}")
+#         # Retrieve and print data from the first board
+#         data_1 = brainflow_setup_1.get_board_data()
+#         print(f"Data from board 1: {data_1}")
 
-        # Retrieve and print data from the second board
-        data_2 = brainflow_setup_2.get_board_data()
-        print(f"Data from board 2: {data_2}")
+#         # Retrieve and print data from the second board
+#         data_2 = brainflow_setup_2.get_board_data()
+#         print(f"Data from board 2: {data_2}")
 
-        # Stop the streaming and release the sessions for both boards
-        brainflow_setup_1.stop()
-        brainflow_setup_2.stop()
+#         # Stop the streaming and release the sessions for both boards
+#         brainflow_setup_1.stop()
+#         brainflow_setup_2.stop()
 
-    else:
-        print("Not enough compatible devices found.")
+#     else:
+#         print("Not enough compatible devices found.")
