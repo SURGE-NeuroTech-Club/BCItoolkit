@@ -141,7 +141,7 @@ class BrainFlowBoardSetup:
 
     def get_board_data(self):
         """
-        Retrieves the current data from the BrainFlow board.
+        Retrieves the current data from the BrainFlow board. - Removes data from ringbuffer
 
         This method fetches the most recent data collected from the board, including EEG, accelerometer, and other sensor data.
 
@@ -152,7 +152,27 @@ class BrainFlowBoardSetup:
         if self.board is not None:
             return self.board.get_board_data()
         else:
-            print(f"[{self.name}] Board is not set up.")
+            print(f"Board is not set up.")
+            return None
+        
+    def get_current_board_data(self, num_samples):
+        """
+        Retrieves the most recent `num_samples` data from the BrainFlow board. - Does not remove data from ringbuffer
+
+        This method fetches the latest `num_samples` from the board’s buffer, which is useful
+        for real-time data analysis.
+
+        Args:
+            num_samples (int): Number of recent samples to fetch.
+
+        Returns:
+            numpy.ndarray: The latest `num_samples` data from the BrainFlow board if the board is set up.
+            None: If the board is not set up.
+        """
+        if self.board is not None:
+            return self.board.get_current_board_data(num_samples)
+        else:
+            print(f"Board is not set up.")
             return None
         
     def insert_marker(self, marker, verbose=True):
@@ -175,7 +195,7 @@ class BrainFlowBoardSetup:
             except BrainFlowError as e:
                 print(f"[{self.name}] Error inserting marker: {e}")
         else:
-            print(f"[{self.name}] Board is not streaming, cannot insert marker.")
+            print(f"Board is not streaming, cannot insert marker.")
     
     def stop(self):
         """

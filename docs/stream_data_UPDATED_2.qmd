@@ -1,0 +1,190 @@
+# BrainFlowBoardSetup Class Documentation
+
+## Overview
+
+The `BrainFlowBoardSetup` class provides an interface for managing the setup, control, and data streaming of a BrainFlow board. It encapsulates the essential functionalities required to work with BrainFlow boards, including initializing the board, starting and stopping the data stream, retrieving data, and displaying the current input parameters.
+
+This class also allows for dynamic delegation of attributes to the underlying `BoardShim` instance, enabling the use of all `BoardShim` attributes, even if they are not explicitly defined within this class.
+
+## Class Attributes
+
+- **name (str)**: A user-friendly name or identifier for the board setup instance. Defaults to 'Board X' if not provided.
+- **board_id (int)**: The ID of the BrainFlow board. This is used to identify the specific board model you are working with.
+- **serial_port (str)**: The serial port to which the BrainFlow board is connected. This is required to establish communication with the board.
+- **params (BrainFlowInputParams)**: An instance of the `BrainFlowInputParams` class that holds the input parameters for the BrainFlow board. These parameters are crucial for configuring the board according to specific requirements.
+- **board (BoardShim)**: An instance of the `BoardShim` class, which represents the BrainFlow board itself. This attribute is initialized during the setup process and is used for various operations such as starting and stopping the data stream.
+
+## Methods
+
+### `__init__(self, board_id, serial_port=None, name=None, **kwargs)`
+
+Initializes the `BrainFlowBoardSetup` class with the specified `board_id`, `serial_port`, and any additional parameters.
+
+**Args:**
+
+- `board_id (int)`: The ID of the BrainFlow board.
+- `serial_port (str)`: The serial port to which the BrainFlow board is connected.
+- `name (str)`: A user-friendly name or identifier for this instance. Defaults to 'Board X'.
+- `**kwargs`: Additional keyword arguments that are set as attributes on the `BrainFlowInputParams` instance.
+
+**Usage:**
+
+```
+board_setup = BrainFlowBoardSetup(board_id=0, serial_port="COM3", timeout=15)
+```
+
+### `setup(self)`
+
+Prepares the session and starts the data stream from the BrainFlow board.
+
+**Description:**
+
+- This method initializes the `BoardShim` instance with the provided `board_id` and `params`.
+- It prepares the session and starts the data stream.
+- In case of an error, it prints the error message and sets the `board` attribute to `None`.
+
+**Usage:**
+
+```
+board_setup.setup()
+```
+
+### `show_params(self)`
+
+Prints the current parameters of the `BrainFlowInputParams` instance.
+
+**Description:**
+
+- Displays the current configuration of the input parameters used by the BrainFlow board.
+
+**Usage:**
+
+```
+board_setup.show_params()
+```
+
+### `get_board_data(self)`
+
+Retrieves the current data from the BrainFlow board.
+
+This method fetches the most recent data collected from the board, including EEG, accelerometer, and other sensor data.
+
+**Returns:**
+
+- `numpy.ndarray`: The data retrieved from the BrainFlow board if the board is set up; otherwise, `None`.
+
+**Usage:**
+
+```
+data = board_setup.get_board_data()
+```
+
+### `get_current_board_data(self, num_samples)`
+
+Retrieves the most recent `num_samples` data from the BrainFlow board without removing data from the buffer.
+
+**Args:**
+
+- `num_samples (int)`: Number of recent samples to fetch.
+
+**Returns:**
+
+- `numpy.ndarray`: The latest `num_samples` data from the BrainFlow board if the board is set up; otherwise, `None`.
+
+**Usage:**
+
+```
+data = board_setup.get_current_board_data(100)
+```
+
+### `insert_marker(self, marker, verbose=True)`
+
+Inserts a marker into the data stream at the current time.
+
+**Args:**
+
+- `marker (float)`: The marker value to be inserted.
+- `verbose (bool)`: Whether to print a confirmation message. Default is `True`.
+
+**Usage:**
+
+```
+board_setup.insert_marker(1.0)
+```
+
+### `stop(self)`
+
+Stops the data stream and releases the session of the BrainFlow board.
+
+**Description:**
+
+- This method safely stops the data stream and releases the session associated with the BrainFlow board.
+- It handles specific errors like "BOARD_NOT_CREATED_ERROR:15" gracefully by suppressing unnecessary error messages.
+
+**Usage:**
+
+```
+board_setup.stop()
+```
+
+### `__getattr__(self, name)`
+
+Delegates attribute access to the `BoardShim` instance if the attribute is not found in the current instance.
+
+**Args:**
+
+- `name (str)`: The name of the attribute to access.
+
+**Returns:**
+
+- The attribute from the `BoardShim` instance if it exists; otherwise, raises `AttributeError`.
+
+**Usage:**
+
+```
+some_value = board_setup.some_attribute_from_board_shim
+```
+
+### `__del__(self)`
+
+Ensures that the data stream is stopped and the session is released when the object is deleted.
+
+**Description:**
+
+- This method is called when the object is about to be destroyed.
+- It ensures that the data stream is stopped and the session is released if the board was previously set up.
+
+**Usage:**
+
+```
+del board_setup
+```
+
+## Example Usage
+
+Here's how you might use the `BrainFlowBoardSetup` class in a script:
+
+```
+def main():
+    # Initialize the BrainFlowBoardSetup class
+    board_setup = BrainFlowBoardSetup(board_id=0, serial_port="COM3", timeout=15)
+
+    # Show the current input parameters
+    board_setup.show_params()
+
+    # Set up the board and start streaming data
+    board_setup.setup()
+
+    # Retrieve and print data from the board
+    data = board_setup.get_board_data()
+    if data is not None:
+        print("Data shape:", data.shape)
+        print(data)
+
+    # Stop the board and release the session
+    board_setup.stop()
+
+if __name__ == "__main__":
+    main()
+```
+
