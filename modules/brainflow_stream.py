@@ -285,7 +285,7 @@ if __name__ == "__main__":
 #     brainflow_setup_1.stop()
 #     brainflow_setup_2.stop()
 
-## Method 2 - finding compatible devices and then iterating through them
+## Method 2 - Detecting compatible devices and assigning them consistently -> ideal for ensuring the same board is assigned to the same port on each run
 # if __name__ == "__main__":
 #     import time
 
