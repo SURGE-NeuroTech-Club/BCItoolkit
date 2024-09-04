@@ -308,8 +308,8 @@ if __name__ == "__main__":
     if stimulus_process.is_running():
         print("Process is still running.")
     
-    time.sleep(20)
+    # time.sleep(20)
     
     # Stop the process if needed
-    stimulus_process.stop()
-    print("Process terminated.")
+    # stimulus_process.stop()
+    # print("Process terminated.")

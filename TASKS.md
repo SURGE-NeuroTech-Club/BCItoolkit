@@ -7,7 +7,8 @@ The goal of this repo/library is to make a toolkit for making SSVEP/ERP-based br
   - [ ] Test Segmentation.py
     - Overlapping data issues? -> better way to implement segmentation? (just have `get_data` module??)
   - [ ] Test Filtering.py -> validate the results in processing_test.ipynb
-- [ ] Test the new `SSVEP_stim.py` for flicker frequency!!
+- [X] Test the new `SSVEP_stim.py` for flicker frequency!!
+  - Preliminary testing looks good (not sure what min/max of program (or ssvep doohikey) are)
 - [ ] Test new classification module
   - [ ] CCA
   - [ ] FBCCA

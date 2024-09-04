@@ -5,7 +5,6 @@ from modules.ssvep_handler import *
 from modules.stim_pres import *
 
 from brainflow.board_shim import BoardShim, BrainFlowInputParams, BoardIds, BrainFlowPresets
-from pynput import keyboard
 
 ## Adjust As Necessary
 serial_port = 'COM7' # Insert port where Cyton Dongle is inserted. This looks different on MAC/Linux -> "/dev/tty*"
