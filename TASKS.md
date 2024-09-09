@@ -25,6 +25,11 @@ The goal of this repo/library is to make a toolkit for making SSVEP/ERP-based br
 
 # Notes:
 
+
+sim_ssvep_data.npy: simulated SSVEP data in shape (8, 15000)
+8 channels, 15000 samples (60 seconds at 250 Hz Sample Rate)
+Simulated SSVEP signal changes between [9.25, 11.25, 13.25, 15.25] Hz every 10 seconds
+
 **Cyton Board**: streams data in 24 channels
 - 1-8 = EEG
 - 9-11 = Accelerometer Channels
