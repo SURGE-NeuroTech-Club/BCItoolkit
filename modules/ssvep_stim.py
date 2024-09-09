@@ -68,7 +68,12 @@ class SSVEPStimulus:
             if refresh_rate is not None:
                 refresh_rates.append(refresh_rate)
             core.wait(0.1)
-        return round(np.mean(refresh_rates), 0)
+
+        if refresh_rates:
+            return round(np.mean(refresh_rates), 0)
+        else:
+            print("Warning: Could not measure a consistent refresh rate. Using default value of 60 Hz.")
+            return 60  # Default refresh rate
 
     def calculate_actual_frequencies(self, desired_frequencies):
         """
@@ -289,11 +294,11 @@ if __name__ == "__main__":
     
     # Start the SSVEP stimulus in a separate process -> use this if running the SSVEPStimulus in the same script as EEG processing or other code
     # Create an instance of the SSVEPStimulusRunner class
-    stimulus_process = SSVEPStimulusRunner(box_frequencies=box_frequencies, 
-                                            box_texts=box_texts, 
-                                            box_text_indices=box_text_indices,
-                                            display_index=display_index, 
-                                            display_mode=display_mode, 
+    stimulus_process = SSVEPStimulusRunner(box_frequencies = box_frequencies, 
+                                            box_texts = box_texts, 
+                                            box_text_indices = box_text_indices,
+                                            display_index = display_index, 
+                                            display_mode = display_mode, 
                                             monitor_name = monitor_name)
     # (box_frequencies, box_texts, box_text_indices, display_index, display_mode, monitor_name)
     
