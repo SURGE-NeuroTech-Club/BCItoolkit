@@ -1,7 +1,7 @@
 import numpy as np
-from sklearn.cross_decomposition import CCA
-from scipy.signal import butter, filtfilt
+from mvlearn.embed import CCA
 from scipy.optimize import minimize
+from scipy.signal import butter, filtfilt
 
 class SSVEPClassifier:
     """
@@ -88,19 +88,10 @@ class SSVEPClassifier:
         Returns:
             float: The correlation coefficient between the EEG data and reference signals.
         """
-        if eeg_data.shape[0] < eeg_data.shape[1]:  
-            eeg_data = eeg_data.T  # Transpose to make it (n_samples, n_channels)
-
-        if eeg_data.shape[0] != reference_signal.shape[0]:
-            raise ValueError(f"Mismatch in samples between EEG data and reference signal. "
-                             f"EEG samples: {eeg_data.shape[0]}, Reference samples: {reference_signal.shape[0]}")
-
         cca = CCA(n_components=1)
-        cca.fit(eeg_data, reference_signal)
-        U, V = cca.transform(eeg_data, reference_signal)
-
-        corr = np.corrcoef(U[:, 0], V[:, 0])[0, 1]
-        return corr
+        cca.fit([eeg_data.T, reference_signal])
+        U, V = cca.transform([eeg_data.T, reference_signal])
+        return np.corrcoef(U[:, 0], V[:, 0])[0, 1]
 
     def _optimize_reference_signals(self, eeg_data, freq):
         """
@@ -117,8 +108,8 @@ class SSVEPClassifier:
             phase_shift, amplitude = params
             ref_signals = self._generate_reference_signals_single(freq, phase_shift, amplitude)
             cca = CCA(n_components=1)
-            cca.fit(eeg_data.T, ref_signals)
-            U, V = cca.transform(eeg_data.T, ref_signals)
+            cca.fit([eeg_data.T, ref_signals])
+            U, V = cca.transform([eeg_data.T, ref_signals])
             corr = np.corrcoef(U[:, 0], V[:, 0])[0, 1]
             return -corr  # Minimize the negative correlation to maximize the positive correlation
 
@@ -128,6 +119,27 @@ class SSVEPClassifier:
         max_corr = -result.fun
 
         return optimized_ref_signals, max_corr
+
+    def _generate_reference_signals_single(self, freq, phase_shift=0, amplitude=1):
+        """
+        Generates optimized reference signals for a given frequency.
+
+        Args:
+            freq (float): The target frequency.
+            phase_shift (float): Phase shift applied to the reference signals.
+            amplitude (float): Amplitude of the reference signals.
+
+        Returns:
+            np.ndarray: The optimized reference signals.
+        """
+        signals = []
+        time = np.linspace(0, self.n_samples / self.sampling_rate, self.n_samples, endpoint=False)
+        for harmon in self.harmonics:
+            sine_wave = amplitude * np.sin(2 * np.pi * harmon * freq * time + phase_shift)
+            cosine_wave = amplitude * np.cos(2 * np.pi * harmon * freq * time + phase_shift)
+            signals.append(sine_wave)
+            signals.append(cosine_wave)
+        return np.vstack(signals).T
 
     def __call__(self, eeg_data):
         """
@@ -188,3 +200,17 @@ if __name__ == "__main__":
     # Perform CCA analysis
     detected_freq, correlation = cca_classifier(eeg_data)
     print(f"Detected frequency using CCA: {detected_freq} Hz with correlation: {correlation:.3f}")
+
+    # Initialize SSVEP classifier with FBCCA method
+    fbcca_classifier = SSVEPClassifier(frequencies, harmonics, sampling_rate, n_samples, method='FBCCA', num_subbands=5)
+
+    # Perform FBCCA analysis
+    detected_freq_fbcca, correlation_fbcca = fbcca_classifier(eeg_data)
+    print(f"Detected frequency using FBCCA: {detected_freq_fbcca} Hz with correlation: {correlation_fbcca:.3f}")
+
+    # Initialize SSVEP classifier with foCCA method
+    focc_classifier = SSVEPClassifier(frequencies, harmonics, sampling_rate, n_samples, method='foCCA')
+
+    # Perform foCCA analysis
+    detected_freq_focca, correlation_focca = focc_classifier(eeg_data)
+    print(f"Detected frequency using foCCA: {detected_freq_focca} Hz with correlation: {correlation_focca:.3f}")

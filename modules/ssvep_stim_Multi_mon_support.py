@@ -11,7 +11,7 @@ class SSVEPStimulus:
     Class to create and run a Steady-State Visual Evoked Potential (SSVEP) stimulus using PsychoPy.
     """
     
-    def __init__(self, box_frequencies, queue=None, box_texts=None, box_text_indices=None, display_index=0, display_mode="freq", monitor_name="testMonitor"):
+    def __init__(self, box_frequencies, queue=None, box_texts=None, box_text_indices=None, display_index=0, display_mode="freq", monitor_name="testMonitor", refresh_rate=None):
         """
         Initializes the SSVEPStimulus class with the given parameters.
         
@@ -23,6 +23,7 @@ class SSVEPStimulus:
         - display_index: Index of the display screen to use.
         - display_mode: Mode of display ('freq', 'text', 'both').
         - monitor_name: Name of the monitor configuration to use.
+        - refresh_rate: Optional refresh rate. If provided, skips measuring the refresh rate.
         """
         self.box_frequencies = box_frequencies
         self.box_texts = box_texts
@@ -45,8 +46,8 @@ class SSVEPStimulus:
             autoLog=False
         )
 
-        self.refresh_rate = self._measure_refresh_rate()
-        print(f"Measured Refresh Rate: {self.refresh_rate:.2f} Hz")
+        self.refresh_rate = refresh_rate if refresh_rate else self._measure_refresh_rate()
+        print(f"Refresh Rate: {self.refresh_rate:.2f} Hz")
 
         self.actual_frequencies = self.calculate_actual_frequencies(box_frequencies)
         self.boxes = self._create_boxes()
@@ -75,6 +76,7 @@ class SSVEPStimulus:
             print("Warning: Could not measure a consistent refresh rate. Using default value of 60 Hz.")
             return 60  # Default refresh rate
 
+
     def calculate_actual_frequencies(self, desired_frequencies):
         """
         Calculates the actual frequencies based on the desired frequencies and the refresh rate.
@@ -85,6 +87,7 @@ class SSVEPStimulus:
         Returns:
         - List of actual frequencies.
         """
+        print(f"Using refresh rate: {self.refresh_rate} Hz")  # Debugging line
         actual_frequencies = []
         for freq in desired_frequencies:
             frames_per_cycle = round(self.refresh_rate / freq)
@@ -192,7 +195,7 @@ class SSVEPStimulus:
         self.win.close()
         core.quit()
 
-def start_ssvep_stimulus(box_frequencies, queue=None, box_texts=None, box_text_indices=None, display_index=0, display_mode=None, monitor_name='testMonitor'):
+def start_ssvep_stimulus(box_frequencies, queue=None, box_texts=None, box_text_indices=None, display_index=0, display_mode=None, monitor_name='testMonitor', refresh_rate=None):
     """
     Starts the SSVEP stimulus in the current process.
     
@@ -204,8 +207,9 @@ def start_ssvep_stimulus(box_frequencies, queue=None, box_texts=None, box_text_i
     - display_index: Index of the display screen to use.
     - display_mode: Mode of display ('freq', 'text', 'both').
     - monitor_name: Name of the monitor configuration to use.
+    - refresh_rate: Optional refresh rate. If provided, skips measuring the refresh rate.
     """
-    stimulus = SSVEPStimulus(box_frequencies, queue, box_texts, box_text_indices, display_index, display_mode, monitor_name)
+    stimulus = SSVEPStimulus(box_frequencies, queue, box_texts, box_text_indices, display_index, display_mode, monitor_name, refresh_rate)
     stimulus.run()
 
 class SSVEPStimulusRunner:
@@ -213,7 +217,7 @@ class SSVEPStimulusRunner:
     Class to manage the SSVEP stimulus in a separate process.
     """
     
-    def __init__(self, box_frequencies, box_texts=None, box_text_indices=None, display_index=0, display_mode=None, monitor_name='testMonitor'):
+    def __init__(self, box_frequencies, box_texts=None, box_text_indices=None, display_index=0, display_mode=None, monitor_name='testMonitor', refresh_rate=None):
         """
         Initializes the SSVEPStimulusRunner class with the given parameters.
         
@@ -224,6 +228,7 @@ class SSVEPStimulusRunner:
         - display_index: Index of the display screen to use.
         - display_mode: Mode of display ('freq', 'text', 'both').
         - monitor_name: Name of the monitor configuration to use.
+        - refresh_rate: Optional refresh rate. If provided, skips measuring the refresh rate.
         """
         self.box_frequencies = box_frequencies
         self.box_texts = box_texts
@@ -231,6 +236,7 @@ class SSVEPStimulusRunner:
         self.display_index = display_index
         self.display_mode = display_mode
         self.monitor_name = monitor_name
+        self.refresh_rate = refresh_rate  # Save refresh_rate
         self.queue = Queue()
         self.process = None
 
@@ -238,7 +244,7 @@ class SSVEPStimulusRunner:
         """
         Starts the SSVEP stimulus in a separate process.
         """
-        self.process = Process(target=start_ssvep_stimulus, args=(self.box_frequencies, self.queue, self.box_texts, self.box_text_indices, self.display_index, self.display_mode, self.monitor_name))
+        self.process = Process(target=start_ssvep_stimulus, args=(self.box_frequencies, self.queue, self.box_texts, self.box_text_indices, self.display_index, self.display_mode, self.monitor_name, self.refresh_rate))
         self.process.start()
 
     def get_actual_frequencies(self):
@@ -299,7 +305,8 @@ if __name__ == "__main__":
                                             box_text_indices = box_text_indices,
                                             display_index = display_index, 
                                             display_mode = display_mode, 
-                                            monitor_name = monitor_name)
+                                            monitor_name = monitor_name,
+                                            refresh_rate = 240)
     # (box_frequencies, box_texts, box_text_indices, display_index, display_mode, monitor_name)
     
     # Start the SSVEP stimulus
