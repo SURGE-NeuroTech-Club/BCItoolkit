@@ -278,7 +278,7 @@ if __name__ == "__main__":
     box_frequencies = [9.25, 11.25, 13.25, 15.25]
     box_texts = ['Right', 'Left', 'Up', 'Down']
     box_text_indices = [0, 1, 3, 2]
-    display_index = 1
+    display_index = 0
     display_mode = 'both'
     monitor_name = 'testMonitor'
     

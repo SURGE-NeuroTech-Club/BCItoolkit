@@ -77,10 +77,13 @@ def main():
                                                 lowcut=0.1,
                                                 order=4  # Parameter adjusts rolloff of filter (higher = faster dropoff)
                                                 )
-        print(filtered_segment[:, :30])
+        
+        # print(filtered_segment[:, :30])
+        
         detected_freq, correlation = cca_classifier(filtered_segment)
         print(f"Detected frequency using CCA: {detected_freq} Hz with correlation: {correlation:.3f}")
 
+        # Wait for 2 seconds to accumulate new data
         time.sleep(2)
 
 
