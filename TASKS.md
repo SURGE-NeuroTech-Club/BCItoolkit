@@ -2,8 +2,33 @@
 
 The goal of this repo/library is to make a toolkit for making SSVEP/ERP-based brain-computer interfaces accessible for those who don't have much/any experience.
 
+**Testing:**
+- [X] Split into Segmenting, Filters, Other(?)
+  - [ ] Test Segmentation.py
+    - Overlapping data issues? -> better way to implement segmentation? (just have `get_data` module??)
+  - [ ] Test Filtering.py -> validate the results in processing_test.ipynb
+- [X] Test the new `SSVEP_stim.py` for flicker frequency!!
+  - Preliminary testing looks good (not sure what min/max of program (or ssvep doohikey) are)
+- [ ] Test new classification module
+  - [ ] CCA
+  - [ ] FBCCA
+- [ ] Test the entire example pipeline [`testing/Full_Pipeline_Test.ipynb`] with a cyton board!
+
+
+**Feature Timeline:**
+- Artifact removal  
+  - Based on amplitude
+  - EOG artifact removal?
+- ERP_stim (large host of challenges with markers and training data requirements)
+- Classification methods for ERPs
+
 
 # Notes:
+
+
+sim_ssvep_data.npy: simulated SSVEP data in shape (8, 15000)
+8 channels, 15000 samples (60 seconds at 250 Hz Sample Rate)
+Simulated SSVEP signal changes between [9.25, 11.25, 13.25, 15.25] Hz every 10 seconds
 
 **Cyton Board**: streams data in 24 channels
 - 1-8 = EEG

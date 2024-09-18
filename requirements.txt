@@ -1,0 +1,7 @@
+brainflow==5.13.2
+matplotlib==3.7.3
+mvlearn==0.5.0
+numpy==1.24.4
+psychopy==2024.2.1
+pygame==2.6.0
+scipy==1.10.1

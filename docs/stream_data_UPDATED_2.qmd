@@ -1,6 +1,4 @@
----
-title: BrainFlowBoardSetup Class Documentation
----
+# BrainFlowBoardSetup Class Documentation
 
 ## Overview
 
@@ -10,15 +8,11 @@ This class also allows for dynamic delegation of attributes to the underlying `B
 
 ## Class Attributes
 
-- **name (str)**: A user-friendly name or identifier for the board setup instance. Defaults to `Board X`, where `X` is a unique integer starting from 0.
+- **name (str)**: A user-friendly name or identifier for the board setup instance. Defaults to 'Board X' if not provided.
 - **board_id (int)**: The ID of the BrainFlow board. This is used to identify the specific board model you are working with.
 - **serial_port (str)**: The serial port to which the BrainFlow board is connected. This is required to establish communication with the board.
 - **params (BrainFlowInputParams)**: An instance of the `BrainFlowInputParams` class that holds the input parameters for the BrainFlow board. These parameters are crucial for configuring the board according to specific requirements.
 - **board (BoardShim)**: An instance of the `BoardShim` class, which represents the BrainFlow board itself. This attribute is initialized during the setup process and is used for various operations such as starting and stopping the data stream.
-- **session_prepared (bool)**: Flag indicating if the session has been prepared.
-- **streaming (bool)**: Flag indicating if the board is actively streaming data.
-- **eeg_channels (list)**: List of EEG channel indices for the board.
-- **sampling_rate (int)**: Sampling rate of the board.
 
 ## Methods
 
@@ -29,33 +23,14 @@ Initializes the `BrainFlowBoardSetup` class with the specified `board_id`, `seri
 **Args:**
 
 - `board_id (int)`: The ID of the BrainFlow board.
-- `serial_port (str, optional)`: The serial port to which the BrainFlow board is connected.
-- `name (str, optional)`: A user-friendly name or identifier for this instance. If not provided, defaults to `Board X`.
+- `serial_port (str)`: The serial port to which the BrainFlow board is connected.
+- `name (str)`: A user-friendly name or identifier for this instance. Defaults to 'Board X'.
 - `**kwargs`: Additional keyword arguments that are set as attributes on the `BrainFlowInputParams` instance.
 
 **Usage:**
 
 ```
 board_setup = BrainFlowBoardSetup(board_id=0, serial_port="COM3", timeout=15)
-```
-
-### `find_device_ports(self)`
-
-Finds all compatible BrainFlow devices by checking the available serial ports.
-
-**Description:**
-
-- This method iterates over available serial ports on the computer and attempts to detect and verify BrainFlow-compatible devices by initializing a session. 
-- It returns a list of compatible devices.
-
-**Returns:**
-
-- `list`: A list of dictionaries containing `port`, `serial_number`, and `description` for each compatible device.
-
-**Usage:**
-
-```
-compatible_devices = board_setup.find_device_ports()
 ```
 
 ### `setup(self)`
@@ -66,7 +41,6 @@ Prepares the session and starts the data stream from the BrainFlow board.
 
 - This method initializes the `BoardShim` instance with the provided `board_id` and `params`.
 - It prepares the session and starts the data stream.
-- If no `serial_port` is provided, it attempts to auto-detect a compatible device.
 - In case of an error, it prints the error message and sets the `board` attribute to `None`.
 
 **Usage:**
@@ -93,6 +67,8 @@ board_setup.show_params()
 
 Retrieves the current data from the BrainFlow board.
 
+This method fetches the most recent data collected from the board, including EEG, accelerometer, and other sensor data.
+
 **Returns:**
 
 - `numpy.ndarray`: The data retrieved from the BrainFlow board if the board is set up; otherwise, `None`.
@@ -103,9 +79,27 @@ Retrieves the current data from the BrainFlow board.
 data = board_setup.get_board_data()
 ```
 
+### `get_current_board_data(self, num_samples)`
+
+Retrieves the most recent `num_samples` data from the BrainFlow board without removing data from the buffer.
+
+**Args:**
+
+- `num_samples (int)`: Number of recent samples to fetch.
+
+**Returns:**
+
+- `numpy.ndarray`: The latest `num_samples` data from the BrainFlow board if the board is set up; otherwise, `None`.
+
+**Usage:**
+
+```
+data = board_setup.get_current_board_data(100)
+```
+
 ### `insert_marker(self, marker, verbose=True)`
 
-Inserts a marker into the data stream.
+Inserts a marker into the data stream at the current time.
 
 **Args:**
 
@@ -124,8 +118,8 @@ Stops the data stream and releases the session of the BrainFlow board.
 
 **Description:**
 
-- This method stops the data stream and releases the session associated with the BrainFlow board.
-- If the board is not properly initialized, it handles the specific "BOARD_NOT_CREATED_ERROR:15" error gracefully by suppressing the error message.
+- This method safely stops the data stream and releases the session associated with the BrainFlow board.
+- It handles specific errors like "BOARD_NOT_CREATED_ERROR:15" gracefully by suppressing unnecessary error messages.
 
 **Usage:**
 
@@ -157,7 +151,8 @@ Ensures that the data stream is stopped and the session is released when the obj
 
 **Description:**
 
-- This method ensures that the session is properly released and resources are freed when the object is garbage collected.
+- This method is called when the object is about to be destroyed.
+- It ensures that the data stream is stopped and the session is released if the board was previously set up.
 
 **Usage:**
 
@@ -167,79 +162,29 @@ del board_setup
 
 ## Example Usage
 
-### Streaming from a Single Board
+Here's how you might use the `BrainFlowBoardSetup` class in a script:
 
 ```
 def main():
     # Initialize the BrainFlowBoardSetup class
-    brainflow_board = BrainFlowBoardSetup(board_id=0, serial_port="COM3", timeout=15)
+    board_setup = BrainFlowBoardSetup(board_id=0, serial_port="COM3", timeout=15)
 
     # Show the current input parameters
-    brainflow_board.show_params()
+    board_setup.show_params()
 
     # Set up the board and start streaming data
-    brainflow_board.setup()
+    board_setup.setup()
 
     # Retrieve and print data from the board
-    data = brainflow_board.get_board_data()
+    data = board_setup.get_board_data()
     if data is not None:
         print("Data shape:", data.shape)
         print(data)
 
     # Stop the board and release the session
-    brainflow_board.stop()
+    board_setup.stop()
 
 if __name__ == "__main__":
     main()
 ```
 
-### Streaming from Two Boards Simultaneously
-
-```
-# Detecting compatible devices and assigning them consistently -> ideal for ensuring the same board is assigned to the same port on each run
-if __name__ == "__main__":
-    import time
-
-    board_id_cyton = BoardIds.CYTON_BOARD.value
-
-    # Instantiate BrainFlowBoardSetup with verbose enabled for detailed output
-    brainflow_setup_detector = BrainFlowBoardSetup(board_id=board_id_cyton)
-
-    # Find all compatible devices
-    compatible_ports = brainflow_setup_detector.find_device_ports()
-
-    # Check if at least two devices are found
-    if len(compatible_ports) >= 2:
-        serial_port_1 = compatible_ports[0]['port']
-        serial_port_2 = compatible_ports[1]['port']
-        
-        # Instantiate BrainFlowBoardSetup for the first board
-        brainflow_setup_1 = BrainFlowBoardSetup(board_id=board_id_cyton, serial_port=serial_port_1)
-
-        # Instantiate BrainFlowBoardSetup for the second board
-        brainflow_setup_2 = BrainFlowBoardSetup(board_id=board_id_cyton, serial_port=serial_port_2)
-
-        # Set up the first board and start streaming
-        brainflow_setup_1.setup()
-
-        # Set up the second board and start streaming
-        brainflow_setup_2.setup()
-
-        # Stream from both boards for 5 seconds
-        time.sleep(5)
-
-        # Retrieve and print data from the first board
-        data_1 = brainflow_setup_1.get_board_data()
-        print(f"Data from board 1: {data_1}")
-
-        # Retrieve and print data from the second board
-        data_2 = brainflow_setup_2.get_board_data()
-        print(f"Data from board 2: {data_2}")
-
-        # Stop the streaming and release the sessions for both boards
-        brainflow_setup_1.stop()
-        brainflow_setup_2.stop()
-
-    else:
-        print("Not enough compatible devices found.")
-```
