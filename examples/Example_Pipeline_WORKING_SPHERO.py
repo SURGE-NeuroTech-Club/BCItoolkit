@@ -11,8 +11,25 @@ from modules.segmentation import *
 from modules.classification import *
 from modules.ssvep_stim import *
 
+
+from spherov2 import scanner
+from spherov2.sphero_edu import SpheroEduAPI
+from spherov2.types import Color
+
+
+sphero_list = scanner.find_toys()
+
+
+# Check if the list contains any toys
+if sphero_list:
+    # Select the first toy from the list
+    sphero = sphero_list[0]
+else:
+    print("No Sphero toys found.")
+
+
 # Setting variables:
-board_id = BoardIds.CYTON_BOARD.value #BoardIds.SYNTHETIC_BOARD.value #BoardIds.CYTON_BOARD.value
+board_id = BoardIds.SYNTHETIC_BOARD.value #BoardIds.CYTON_BOARD.value
 frequencies = [9.25, 11.25, 13.25, 15.25]
 buttons = ['Right', 'Left', 'Up', 'Down']
 button_pos = [0, 2, 3, 1]
@@ -82,6 +99,24 @@ def main():
         
         detected_freq, correlation = cca_classifier(filtered_segment)
         print(f"Detected frequency using CCA: {detected_freq} Hz with correlation: {correlation:.3f}")
+
+        if detected_freq == actual_freqs[0]:
+            with SpheroEduAPI(sphero) as droid:
+                droid.set_main_led(Color(r=0, g=255, b=0))    
+
+        elif detected_freq == actual_freqs[1]:
+            with SpheroEduAPI(sphero) as droid:
+                droid.set_main_led(Color(r=255, g=255, b=0))    
+
+        elif detected_freq == actual_freqs[2]:
+            with SpheroEduAPI(sphero) as droid:
+                droid.set_main_led(Color(r=255, g=255, b=0))    
+
+        elif detected_freq == actual_freqs[3]:
+            with SpheroEduAPI(sphero) as droid:
+                droid.set_main_led(Color(r=0, g=0, b=255))    
+
+
 
         # Wait for 2 seconds to accumulate new data
         time.sleep(2)
