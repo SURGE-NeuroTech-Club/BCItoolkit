@@ -93,7 +93,7 @@ class SSVEPClassifier:
 
         if eeg_data.shape[0] != reference_signal.shape[0]:
             raise ValueError(f"Mismatch in samples between EEG data and reference signal. "
-                             f"EEG samples: {eeg_data.shape[0]}, Reference samples: {reference_signal.shape[0]}")
+                            f"EEG samples: {eeg_data.shape[0]}, Reference samples: {reference_signal.shape[0]}")
 
         cca = CCA(n_components=2)
         cca.fit(eeg_data, reference_signal)
