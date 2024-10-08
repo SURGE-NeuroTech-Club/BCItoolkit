@@ -17,7 +17,7 @@ frequencies = [9.25, 11.25, 13.25, 15.25]
 buttons = ['Right', 'Left', 'Up', 'Down']
 button_pos = [0, 2, 3, 1]
 display = 0
-segment_duration = 2
+segment_duration = 4
 
 # Static Variables - Probably don't need to touch :)
 harmonics = np.arange(1, 4) # Generates the 1st, 2nd, & 3rd Harmonics
