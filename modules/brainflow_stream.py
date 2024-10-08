@@ -63,7 +63,7 @@ class BrainFlowBoardSetup:
 
         Returns:
             list: A list of dictionaries containing 'port', 'serial_number', and 'description' for each compatible device.
-                  Returns an empty list if no devices are found.
+                    Returns an empty list if no devices are found.
         """
         # Suppress logs from BrainFlow using internal logging level control
         BoardShim.disable_board_logger()  # Disable all logs

@@ -12,7 +12,7 @@ from modules.classification import *
 from modules.ssvep_stim import *
 
 # Setting variables:
-board_id = BoardIds.CYTON_BOARD.value #BoardIds.SYNTHETIC_BOARD.value #BoardIds.CYTON_BOARD.value
+board_id = BoardIds.SYNTHETIC_BOARD.value #BoardIds.CYTON_BOARD.value 
 frequencies = [9.25, 11.25, 13.25, 15.25]
 buttons = ['Right', 'Left', 'Up', 'Down']
 button_pos = [0, 2, 3, 1]
@@ -24,14 +24,14 @@ harmonics = np.arange(1, 4) # Generates the 1st, 2nd, & 3rd Harmonics
 sampling_rate = BoardShim.get_sampling_rate(board_id)
 n_samples = sampling_rate * segment_duration
 
-# print(get_eeg_channels(board_id))
-
 def main():
     
     # Initialize Streaming Board
-    board = BrainFlowBoardSetup(board_id = board_id)
+    board = BrainFlowBoardSetup(board_id = board_id, serial_port = 'COM3')
     board.setup()
 
+    print(f"Sampling Rate: {sampling_rate}")
+    print(f"Number of Samples: {n_samples}")
 
     # Run the SSVEP Stimulus in a seperate process
     stimulus_process = SSVEPStimulusRunner(box_frequencies = frequencies, 
@@ -42,7 +42,7 @@ def main():
 
     stimulus_process.start()
     
-    # Implement small wait to give SSVEP stimulus time to start
+    # Wait to give SSVEP stimulus time to start and get the actual frequencies
     time.sleep(10)
 
     actual_freqs = stimulus_process.get_actual_frequencies()
@@ -67,7 +67,7 @@ def main():
 
         segment = board.get_current_board_data(num_samples = n_samples)
 
-        print(f"Total shape: {segment.shape}")
+        # print(f"Total shape: {segment.shape}")
 
         eeg_segment = segment[:8, :]  # Only the first 8 channels are EEG channels
         print(f"Segment Shape: {eeg_segment.shape}")
@@ -84,7 +84,7 @@ def main():
         print(f"Detected frequency using CCA: {detected_freq} Hz with correlation: {correlation:.3f}")
 
         # Wait for 2 seconds to accumulate new data
-        time.sleep(2)
+        time.sleep(segment_duration)
 
 
 if __name__ == "__main__":

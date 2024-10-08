@@ -72,7 +72,6 @@ if __name__=='__main__':
     print("\n\nInlet created. Now streaming data...")
 
 
-
     # while True:
     #     sample, timestamp = inlet.pull_sample()
     #     print(timestamp, sample)
