@@ -2,6 +2,8 @@ import sys
 import os
 import time
 import matplotlib.pyplot as plt
+from scipy.signal import butter, filtfilt
+import neurokit2 as nk
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 
@@ -13,17 +15,40 @@ from modules.classification import *
 from modules.ssvep_stim import *
 
 # Setting variables:
-board_id = BoardIds.SYNTHETIC_BOARD.value #BoardIds.CYTON_BOARD.value 
+board_id = BoardIds.CYTON_BOARD.value # BoardIds.SYNTHETIC_BOARD.value 
 frequencies = [9.25, 11.25, 13.25, 15.25]
 buttons = ['Right', 'Left', 'Up', 'Down']
 button_pos = [0, 2, 3, 1]
 display = 0
-segment_duration = 4
+segment_duration = 10
 
 # Static Variables - Probably don't need to touch :)
 harmonics = np.arange(1, 4) # Generates the 1st, 2nd, & 3rd Harmonics
 sampling_rate = BoardShim.get_sampling_rate(board_id)
 n_samples = sampling_rate * segment_duration
+
+def bandpass_filter(data, lowcut, highcut, fs, order=4):
+    """
+    Applies a bandpass filter to the EEG data.
+
+    Args:
+        data (np.ndarray): The input EEG data (n_channels, n_samples).
+        lowcut (float): The lower frequency bound of the bandpass filter.
+        highcut (float): The upper frequency bound of the bandpass filter.
+        fs (float): The sampling rate of the EEG data.
+        order (int): The order of the Butterworth filter.
+
+    Returns:
+        np.ndarray: The bandpass-filtered EEG data.
+    """
+    nyquist = 0.5 * fs  # Nyquist frequency
+    low = lowcut / nyquist
+    high = highcut / nyquist
+    b, a = butter(order, [low, high], btype='band')
+    
+    # Apply the filter to each channel
+    filtered_data = filtfilt(b, a, data, axis=-1)
+    return filtered_data
 
 
 def visualize_eeg_signals(eeg_segment, filtered_segment):
@@ -67,7 +92,7 @@ def visualize_reference_vs_eeg(eeg_segment, reference_signal, frequency):
     plt.figure(figsize=(10, 4))
 
     # Plot one of the EEG channels (assuming EEG data is (n_channels, n_samples))
-    plt.plot(eeg_segment[0, :], label="EEG Channel 1", color="blue")
+    plt.plot(eeg_segment[1, :], label="EEG Channel 1", color="blue")
     
     # Plot the reference signal
     plt.plot(reference_signal[:, 0], label=f"Reference Signal ({frequency} Hz)", color="red")
@@ -108,39 +133,92 @@ def check_signal_alignment(eeg_segment, reference_signal):
     else:
         print(f"EEG and reference signals are aligned (Length: {eeg_len}).")
 
+def check_dc_offset(eeg_segment):
+    """
+    Prints the mean value of the EEG data to check for DC offset.
+    
+    Args:
+        eeg_segment (np.ndarray): The raw EEG data (n_channels, n_samples).
+    """
+    for i in range(eeg_segment.shape[0]):
+        print(f"Mean of channel {i+1}: {np.mean(eeg_segment[i, :])}")
+
+def remove_dc_offset(eeg_data):
+    """
+    Removes the DC offset (mean) from each channel in the EEG data for visualization.
+    
+    Args:
+        eeg_data (np.ndarray): The raw EEG data (n_channels, n_samples).
+    
+    Returns:
+        np.ndarray: The EEG data with the DC offset removed.
+    """
+    return eeg_data - np.mean(eeg_data, axis=1, keepdims=True)
+
+#########
+# MAIN
+#########
 def main():
     # Initialize Streaming Board
-    board = BrainFlowBoardSetup(board_id=board_id, serial_port='COM3')
+    board = BrainFlowBoardSetup(board_id=board_id) #, serial_port='COM3')
     board.setup()
 
     # Run the SSVEP Stimulus in a separate process
     stimulus_process = SSVEPStimulusRunner(box_frequencies=frequencies, 
-                                           box_texts=buttons, 
-                                           box_text_indices=button_pos,
-                                           display_index=display,
-                                           display_mode='both')
+                                            box_texts=buttons, 
+                                            box_text_indices=button_pos,
+                                            display_index=display,
+                                            display_mode='both')
     # stimulus_process.start()
 
     # Wait for the SSVEP stimulus to stabilize
     time.sleep(10)
+    
 
     # actual_freqs = stimulus_process.get_actual_frequencies()
     actual_freqs = frequencies
     print("Actual Frequencies:", actual_freqs)
 
     cca_classifier = SSVEPClassifier(frequencies=actual_freqs, 
-                                     harmonics=harmonics, 
-                                     sampling_rate=sampling_rate, 
-                                     n_samples=n_samples, 
-                                     method='CCA', 
-                                     stack_harmonics=True)
+                                    harmonics=harmonics, 
+                                    sampling_rate=sampling_rate, 
+                                    n_samples=n_samples, 
+                                    method='CCA', 
+                                    stack_harmonics=True)
 
     filter_obj = Filtering(sampling_rate)
+    
+    time.sleep(5)
 
     while True:
         segment = board.get_current_board_data(num_samples=n_samples)
-        eeg_segment = segment[:8, :]  # First 8 channels assumed to be EEG
-        filtered_segment = filter_obj.bandpass_filter(eeg_segment, highcut=30, lowcut=0.1, order=4)
+        eeg_segment = segment[2:20, :]  # First 8 channels assumed to be EEG
+        
+        # filtered_segment = filter_obj.bandpass_filter(eeg_segment, highcut=30, lowcut=0.1, order=4)
+        filtered_segment = bandpass_filter(eeg_segment, lowcut=0.1, highcut=30, fs=sampling_rate, order=4)
+        
+        # Check for DC offset in the raw EEG data
+        check_dc_offset(eeg_segment)
+        
+        # Remove DC offset for visualization
+        eeg_segment_no_dc = remove_dc_offset(eeg_segment)
+
+        # Now plot the raw vs. filtered data
+        nk.signal_plot([eeg_segment_no_dc[0, :], filtered_segment[0, :]], labels=["Raw (No DC)", "Filtered"])
+        
+        
+        # Preprocess the EEG signal
+        # eeg_cleaned = nk.eeg_clean(eeg_signal, sampling_rate=sampling_rate)
+
+        n_channels = eeg_segment.shape[0]  # Number of channels
+        for i in range(n_channels):
+            print(f"Plotting channel {i+1}")
+            # Extract the i-th channel (1D signal)
+            raw_signal = eeg_segment[i, :]
+            filtered_signal = filtered_segment[i, :]
+        
+        # Plot raw vs. filtered signal for this channel
+        nk.signal_plot([raw_signal, filtered_signal], labels=["Raw", "Filtered"])
         
         # Visualize raw vs filtered EEG signals
         visualize_eeg_signals(eeg_segment, filtered_segment)
@@ -159,10 +237,10 @@ def main():
             correlations.append(correlation)
         
         # Plot correlation coefficients across frequencies
-        plot_correlation_across_frequencies(actual_freqs, correlations)
+        # plot_correlation_across_frequencies(actual_freqs, correlations)
 
         # Wait for the next segment
-        time.sleep(2)
+        time.sleep(segment_duration)
 
 
 if __name__ == '__main__':
