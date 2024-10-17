@@ -157,7 +157,7 @@ def remove_dc_offset(eeg_data):
     # return eeg_data - np.mean(eeg_data, axis=1, keepdims=True)
     hp_cutoff_Hz = 1.0
     
-    b, a = signal.buter(2, hp_cutoff_Hz / (sampling_rate / 2.0), 'highpass')
+    b, a = signal.butter(2, hp_cutoff_Hz / (sampling_rate / 2.0), 'highpass')
     filtered_data = signal.lfilter(b, a, eeg_data, 0)
     # filtered_data = signal.filtfilt(b, a, eeg_data, axis=1)
     
@@ -252,7 +252,7 @@ def main():
         
         dc_offset_removed = remove_dc_offset(eeg_segment)
         
-        # visualize_all_channels_plotly(eeg_segment, dc_offset_removed)
+        visualize_all_channels_plotly(eeg_segment, dc_offset_removed)
         
         # Apply bandpass filter
         filtered_segment = filter_obj.bandpass_filter(eeg_segment, highcut=30, lowcut=0.1, order=4)
