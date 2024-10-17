@@ -4,6 +4,9 @@ import time
 import matplotlib.pyplot as plt
 # from scipy.signal import butter, filtfilt, lfilter
 from scipy import signal
+import numpy as np
+from sklearn.cross_decomposition import CCA
+from sklearn.preprocessing import StandardScaler
 import neurokit2 as nk
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
@@ -14,7 +17,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from modules.brainflow_stream import *
 from modules.filtering import *
 from modules.segmentation import *
-from modules.classification import *
+# from modules.classification import *
 from modules.ssvep_stim import *
 
 # Setting variables:
@@ -23,64 +26,12 @@ frequencies = [9.25, 11.25, 13.25, 15.25]
 buttons = ['Right', 'Left', 'Up', 'Down']
 button_pos = [0, 2, 3, 1]
 display = 0
-segment_duration = 10
+segment_duration = 3
 
 # Static Variables - Probably don't need to touch :)
-harmonics = np.arange(1, 4) # Generates the 1st, 2nd, & 3rd Harmonics
+harmonics = 3 # np.arange(1, 4) # Generates the 1st, 2nd, & 3rd Harmonics
 sampling_rate = BoardShim.get_sampling_rate(board_id)
 n_samples = sampling_rate * segment_duration
-
-def bandpass_filter(data, lowcut, highcut, fs, order=4):
-    """
-    Applies a bandpass filter to the EEG data.
-
-    Args:
-        data (np.ndarray): The input EEG data (n_channels, n_samples).
-        lowcut (float): The lower frequency bound of the bandpass filter.
-        highcut (float): The upper frequency bound of the bandpass filter.
-        fs (float): The sampling rate of the EEG data.
-        order (int): The order of the Butterworth filter.
-
-    Returns:
-        np.ndarray: The bandpass-filtered EEG data.
-    """
-    nyquist = 0.5 * fs  # Nyquist frequency
-    low = lowcut / nyquist
-    high = highcut / nyquist
-    b, a = butter(order, [low, high], btype='band')
-    
-    # Apply the filter to each channel
-    filtered_data = filtfilt(b, a, data, axis=-1)
-    return filtered_data
-
-def visualize_eeg_signals(eeg_segment, filtered_segment):
-    """
-    Visualizes the raw and filtered EEG signals for comparison.
-
-    Args:
-        eeg_segment (np.ndarray): The raw EEG data (n_channels, n_samples).
-        filtered_segment (np.ndarray): The filtered EEG data (n_channels, n_samples).
-    """
-    n_channels = eeg_segment.shape[0]
-    
-    plt.figure(figsize=(12, 6))
-    
-    # Plot raw EEG signals
-    plt.subplot(2, 1, 1)
-    for i in range(n_channels):
-        plt.plot(eeg_segment[i, :], label=f'Channel {i+1}')
-    plt.title("Raw EEG Signals")
-    plt.legend()
-    
-    # Plot filtered EEG signals
-    plt.subplot(2, 1, 2)
-    for i in range(n_channels):
-        plt.plot(filtered_segment[i, :], label=f'Filtered Channel {i+1}')
-    plt.title("Filtered EEG Signals")
-    plt.legend()
-    
-    plt.tight_layout()
-    plt.show()
 
 def visualize_reference_vs_eeg(eeg_segment, reference_signal, frequency):
     """
@@ -163,7 +114,6 @@ def remove_dc_offset(eeg_data):
     
     return filtered_data
     
-
 def visualize_all_channels_plotly(eeg_segment, filtered_segment):
     """
     Visualizes all EEG channels side-by-side using Plotly for interactive viewing.
@@ -196,19 +146,53 @@ def visualize_all_channels_plotly(eeg_segment, filtered_segment):
     # Show the figure
     fig.show()
 
-def subtract_reference(eeg_segment, reference_channel):
-    """
-    Subtracts the reference channel (Channel 0) from each EEG channel.
-    
-    Args:
-        eeg_segment (np.ndarray): EEG data (n_channels, n_samples), excluding the reference channel.
-        reference_channel (np.ndarray): The reference channel data (1D array of n_samples).
-    
-    Returns:
-        np.ndarray: The EEG data with the reference channel subtracted.
-    """
-    return reference_channel - eeg_segment
 
+#########
+# Classification
+#########
+class SSVEPClassifier:
+    def __init__(self, freqs, win_len, s_rate, n_harmonics=2):
+        self.freqs = freqs
+        self.win_len = win_len
+        self.s_rate = s_rate
+        self.n_harmonics = n_harmonics
+        self.train_data = self._init_train_data()
+        self.cca = CCA(n_components=1)
+    
+    def _init_train_data(self):
+        t_vec = np.linspace(0, self.win_len, int(self.s_rate * self.win_len))
+        targets = {}
+        for freq in self.freqs:
+            sig_sin, sig_cos = [], []
+            for harmonics in range(1, self.n_harmonics + 1):
+                sig_sin.append(np.sin(2 * np.pi * harmonics * freq * t_vec))
+                sig_cos.append(np.cos(2 * np.pi * harmonics * freq * t_vec))
+                
+            signals = np.array(sig_sin + sig_cos).T
+            
+            scaled_signals = StandardScaler().fit_transform(signals)
+                
+            targets[freq] = scaled_signals # np.array(sig_sin + sig_cos).T
+        return targets
+
+    def apply_cca(self, eeg):
+        """Apply CCA analysis to EEG data and return scores for each target frequency
+
+        Args:
+            eeg (np.array): EEG array [n_samples, n_chan]
+
+        Returns:
+            list of scores for target frequencies
+        """
+        
+        eeg = StandardScaler().fit_transform(eeg)
+        # self.train_data = StandardScaler().fit_transform(self.train_data)
+        
+        scores = []
+        for key in self.train_data:
+            sig_c, t_c = self.cca.fit_transform(eeg, self.train_data[key])
+            scores.append(np.corrcoef(sig_c.T, t_c.T)[0, 1])
+        return scores
 
 #########
 # MAIN
@@ -219,28 +203,22 @@ def main():
                                 file = '120s_cyton_recording.csv', # ~120s recording where participant looked at each stimulus for 15 seconds before switching clock-wise to the next
                                 master_board = BoardIds.CYTON_BOARD.value )
     board.setup()
-    
-    # Run the SSVEP Stimulus in a separate process
-    stimulus_process = SSVEPStimulusRunner(box_frequencies=frequencies, 
-                                            box_texts=buttons, 
-                                            box_text_indices=button_pos,
-                                            display_index=display,
-                                            display_mode='both')
-    # stimulus_process.start()
 
-    # Wait for the SSVEP stimulus to stabilize
-    # time.sleep(10)
-
-    # actual_freqs = stimulus_process.get_actual_frequencies()
-    actual_freqs = frequencies
+    actual_freqs = [9.23, 11.43, 13.33, 15.0]
+    # 240 Hz = [9.23, 11.43, 13.33, 15.0]
+    # 239 Hz = [9.19, 11.38, 13.28, 14.94]
     print("Actual Frequencies:", actual_freqs)
 
-    cca_classifier = SSVEPClassifier(frequencies=actual_freqs, 
-                                    harmonics=harmonics, 
-                                    sampling_rate=sampling_rate, 
-                                    n_samples=n_samples, 
-                                    method='CCA', 
-                                    stack_harmonics=True)
+    # cca_classifier = SSVEPClassifier(frequencies=actual_freqs, 
+    #                                 harmonics=harmonics, 
+    #                                 sampling_rate=sampling_rate, 
+    #                                 n_samples=n_samples, 
+    #                                 method='CCA', 
+    #                                 stack_harmonics=True)
+    
+    cca_classifier = SSVEPClassifier(freqs=actual_freqs, 
+                                     win_len=segment_duration, 
+                                     s_rate=sampling_rate)
 
     filter_obj = Filtering(sampling_rate)
     
@@ -248,35 +226,38 @@ def main():
 
     while True:
         segment = board.get_current_board_data(num_samples=n_samples)
-        eeg_segment = segment[1:9, :]  # Assuming first 8 channels are EEG
+        eeg_segment = segment[1:9, :]  # Channels 1-9 are EEG channels
         
         dc_offset_removed = remove_dc_offset(eeg_segment)
-        
-        visualize_all_channels_plotly(eeg_segment, dc_offset_removed)
-        
+                
         # Apply bandpass filter
-        filtered_segment = filter_obj.bandpass_filter(eeg_segment, highcut=30, lowcut=0.1, order=4)
+        filtered_segment = filter_obj.bandpass_filter(dc_offset_removed, highcut=30, lowcut=0.1, order=4)
 
+        r = cca_classifier.apply_cca(filtered_segment.T) 
+        print(r)
+        
         # visualize_all_channels_plotly(eeg_segment, filtered_segment)
         
         # Check signal alignment for the first frequency
-        reference_signal = cca_classifier.reference_signals[0]  # First frequency reference
-        check_signal_alignment(filtered_segment, reference_signal)
+        # reference_signal = cca_classifier.reference_signals[0]  # First frequency reference
+        # check_signal_alignment(filtered_segment, reference_signal)
 
         # Compare one EEG channel (Channel 1) against reference signal for the first frequency
-        visualize_reference_vs_eeg(filtered_segment, reference_signal, actual_freqs[0])
+        # visualize_reference_vs_eeg(filtered_segment, reference_signal, actual_freqs[0])
         
-        cca_classifier.plot_reference_signals(eeg_segment=filtered_segment)
+        
 
         # Perform classification using the filtered EEG data
-        correlations = []
-        for freq_idx, freq in enumerate(actual_freqs):
-            detected_freq, correlation = cca_classifier(filtered_segment)
-            correlations.append(correlation)
-            print(f"Frequency: {freq} Hz, Correlation: {correlation}")
+        # correlations = []
+        # for freq_idx, freq in enumerate(actual_freqs):
+        #     detected_freq, correlation = cca_classifier(filtered_segment)
+        #     correlations.append(correlation)
+        #     print(f"Frequency: {freq} Hz, Correlation: {correlation}")
 
         # Plot correlation coefficients across frequencies (optional, uncomment if needed)
-        plot_correlation_across_frequencies(actual_freqs, correlations)
+        # plot_correlation_across_frequencies(actual_freqs, correlations)
+        
+    
 
         # Wait for the next segment of data
         time.sleep(segment_duration)

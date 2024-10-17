@@ -322,8 +322,8 @@ class SSVEPClassifier:
         time = np.linspace(0, self.n_samples / self.sampling_rate, self.n_samples, endpoint=False)
 
         for freq in self.frequencies:
-            Yn = np.vstack([np.sin(2 * np.pi * harmon * freq * time) for harmon in self.harmonics] + 
-                           [np.cos(2 * np.pi * harmon * freq * time) for harmon in self.harmonics])
+            Yn = np.vstack([np.sin(2 * np.pi * harmon * freq * time) for harmon in range(self.harmonics)] + 
+                           [np.cos(2 * np.pi * harmon * freq * time) for harmon in range(self.harmonics)])
             Yn_list.append(Yn.T)  # Stacking both sine and cosine components
         return Yn_list
 
