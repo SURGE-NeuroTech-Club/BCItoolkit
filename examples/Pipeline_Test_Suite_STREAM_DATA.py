@@ -2,7 +2,8 @@ import sys
 import os
 import time
 import matplotlib.pyplot as plt
-from scipy.signal import butter, filtfilt
+# from scipy.signal import butter, filtfilt, lfilter
+from scipy import signal
 import neurokit2 as nk
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
@@ -153,8 +154,15 @@ def remove_dc_offset(eeg_data):
     Returns:
         np.ndarray: The EEG data with the DC offset removed.
     """
-    return eeg_data - np.mean(eeg_data, axis=1, keepdims=True)
-
+    # return eeg_data - np.mean(eeg_data, axis=1, keepdims=True)
+    hp_cutoff_Hz = 1.0
+    
+    b, a = signal.buter(2, hp_cutoff_Hz / (sampling_rate / 2.0), 'highpass')
+    filtered_data = signal.lfilter(b, a, eeg_data, 0)
+    # filtered_data = signal.filtfilt(b, a, eeg_data, axis=1)
+    
+    return filtered_data
+    
 
 def visualize_all_channels_plotly(eeg_segment, filtered_segment):
     """
@@ -242,6 +250,10 @@ def main():
         segment = board.get_current_board_data(num_samples=n_samples)
         eeg_segment = segment[1:9, :]  # Assuming first 8 channels are EEG
         
+        dc_offset_removed = remove_dc_offset(eeg_segment)
+        
+        # visualize_all_channels_plotly(eeg_segment, dc_offset_removed)
+        
         # Apply bandpass filter
         filtered_segment = filter_obj.bandpass_filter(eeg_segment, highcut=30, lowcut=0.1, order=4)
 
@@ -268,58 +280,6 @@ def main():
 
         # Wait for the next segment of data
         time.sleep(segment_duration)
-
-    # while True:
-    #     segment = board.get_current_board_data(num_samples=n_samples)
-    #     eeg_segment = segment[0:20, :]  # First 8 channels assumed to be EEG
-        
-    #     # filtered_segment = filter_obj.bandpass_filter(eeg_segment, highcut=30, lowcut=0.1, order=4)
-    #     filtered_segment = bandpass_filter(eeg_segment, lowcut=0.1, highcut=30, fs=sampling_rate, order=4)
-        
-    #     # Check for DC offset in the raw EEG data
-    #     check_dc_offset(eeg_segment)
-        
-    #     # Remove DC offset for visualization
-    #     eeg_segment_no_dc = remove_dc_offset(eeg_segment)
-
-    #     # Now plot the raw vs. filtered data
-    #     nk.signal_plot([eeg_segment_no_dc[0, :], filtered_segment[0, :]], labels=["Raw (No DC)", "Filtered"])
-        
-        
-    #     # Preprocess the EEG signal
-    #     # eeg_cleaned = nk.eeg_clean(eeg_signal, sampling_rate=sampling_rate)
-
-    #     n_channels = eeg_segment.shape[0]  # Number of channels
-    #     for i in range(n_channels):
-    #         print(f"Plotting channel {i+1}")
-    #         # Extract the i-th channel (1D signal)
-    #         raw_signal = eeg_segment[i, :]
-    #         filtered_signal = filtered_segment[i, :]
-        
-    #     # Plot raw vs. filtered signal for this channel
-    #     nk.signal_plot([raw_signal, filtered_signal], labels=["Raw", "Filtered"])
-        
-    #     # Visualize raw vs filtered EEG signals
-    #     visualize_eeg_signals(eeg_segment, filtered_segment)
-
-    #     # Check signal alignment
-    #     reference_signal = cca_classifier.reference_signals[actual_freqs[1]]
-    #     check_signal_alignment(filtered_segment, reference_signal)
-
-    #     # Compare EEG vs reference signal
-    #     visualize_reference_vs_eeg(filtered_segment, reference_signal, actual_freqs[0])
-
-    #     # Perform classification
-    #     correlations = []
-    #     for freq in actual_freqs:
-    #         detected_freq, correlation = cca_classifier(filtered_segment)
-    #         correlations.append(correlation)
-        
-    #     # Plot correlation coefficients across frequencies
-    #     # plot_correlation_across_frequencies(actual_freqs, correlations)
-
-    #     # Wait for the next segment
-    #     time.sleep(segment_duration)
 
 
 if __name__ == '__main__':
