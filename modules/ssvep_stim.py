@@ -285,8 +285,9 @@ if __name__ == "__main__":
     box_texts = ['Right', 'Left', 'Up', 'Down']
     box_text_indices = [0, 1, 3, 2]
     display_index = 0
-    display_mode = 'both'
-    monitor_name = 'testMonitor'
+    refresh_rate = 240 # Optional: Provide the refresh rate directly
+    display_mode = 'both' # 'freq', 'text', 'both'
+    monitor_name = 'testMonitor' # Name of the monitor configuration to use (defaults to 'testMonitor')
     
     
     # Using default method: (blocking!) -> use this if running the SSVEPStimulus from a seperate script!

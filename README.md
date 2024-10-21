@@ -4,15 +4,26 @@ This repository holds the codebase and documentation for the BCItoolkit library.
 
 
 *Modules/*: Each file should contain documentation on classes & functions
-- `brainflow_stream.py`: A custom class that simplifies usage of the brainflow library to connect and stream from any board supported by brainflow
-- `segmentation.py`: Creates time-based segments of data from the EEG stream for SSVEP processing
-- `brainflow_filtering.py/filtering.py`: These modules support several filtering methods for EEG data. 
-  - brainflow_filtering.py simplifies in-place usage of the brainflow libraries built-in filters
-- `ssvep_stim.py`: Creates customizable SSVEP stimuli and has a class to run them in a seperate process to reduce number of required scripts
+- `brainflow_stream.py`: A custom class that simplifies usage of the brainflow library to connect and stream from any board supported by brainflow. 
+  - Some added features: automatically finds the serial port with the attached dongle, simplifies streaming from multiple boards simultaneously, is designed to be compatible with all of [Brainflow's BoardShim attributes](https://brainflow.readthedocs.io/en/stable/UserAPI.html#brainflow-board-shim).
+- `filtering.py`: This module provides several filtering methods for EEG data using filters from the Scipy library.
+- `ssvep_stim.py`: Creates customizable SSVEP stimuli and has a class to run them in a separate process to reduce number of required scripts without blocking analysis execution.
+  - Functionality: provide intended flicker frequencies, optional names and locations. Produces flickering stimuli at frequency nearest to intended while being possible using the monitors refresh rate. Also returns the actual flicker (target) frequencies for classification purposes.
 - `classification.py`: Has 1 class (more to come) with several methods for classificaiton of SSVEP data
+- ~~`segmentation.py`: Creates time-based segments of data from the EEG stream for SSVEP processing~~
+  - *Deprecated* - Considering implementation into brainflow_stream module; can segment via time.sleep() before retrieving new data from the brainflow board buffer.
 
 Extras:
-    - `get_freqs.py`: Simple module that measures refresh rate and returns a dictionary of all possible frequencies the monitor can accurately display
+    - `get_freqs.py`: Simple function that measures a monitors average refresh rate and returns a dictionary of all possible frequencies the monitor can accurately display using the `ssvep_stim` module. (This isn't necessary since the ssvep_stim module automatically calculates and displays the closest possible flicker frequencies to those given)
+
+## Road-map:
+- [ ] Add (offline) visualization module
+  - Online 'Live' time-series visualization future goal (several existing libraries may be compatible)
+- [ ] Validate CCA/SSVEP Classification (and online BCI system)
+- [ ] Add documentation on existing documentation **[First Release]**
+- [ ] Add modules support ERP-based BCI
+  - `erp_stim` module for stimulus
+  - add SVM, LDA, other common classifiers to `classification` module
 
 
 ## Links/Reference

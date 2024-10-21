@@ -279,26 +279,6 @@ class BrainFlowBoardSetup:
         except BrainFlowError as e:
             if "BOARD_NOT_CREATED_ERROR:15" not in str(e):
                 print(f"[{self.name}, {self.serial_port}] Error stopping board: {e}")        
-    # def stop(self):
-    #     """
-    #     Stops the data stream and releases the session of the BrainFlow board.
-
-    #     This method safely stops the data stream and releases any resources used by the BrainFlow board.
-    #     It also resets the streaming and session flags.
-    #     """
-    #     try:
-    #         if self.board is not None:
-    #             if self.streaming:
-    #                 self.board.stop_stream()
-    #                 self.streaming = False
-    #                 print(f"[{self.name}, {self.serial_port}] Streaming stopped.")
-    #             if self.session_prepared:
-    #                 self.board.release_session()
-    #                 self.session_prepared = False
-    #                 print(f"[{self.name}, {self.serial_port}] Session released.")
-    #     except BrainFlowError as e:
-    #         if "BOARD_NOT_CREATED_ERROR:15" not in str(e):
-    #             print(f"[{self.name}, {self.serial_port}] Error stopping board: {e}")
 
     def __del__(self):
         """
