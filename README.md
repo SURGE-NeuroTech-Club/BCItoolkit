@@ -28,6 +28,7 @@ Documentation is a work-in-progress, for examples see scripts in *Examples/*
 **First Release:**
 - [ ] Add (offline) visualization module
   - Online 'Live' time-series visualization future goal (several existing libraries may be compatible)
+  - Time series, PSD, Topographic maps, etc.
 - [ ] Validate CCA/SSVEP Classification (and online BCI system)
 - [ ] Add documentation on current modules
 

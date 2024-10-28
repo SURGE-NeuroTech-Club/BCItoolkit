@@ -5,7 +5,7 @@ class Filtering:
     def __init__(self, sampling_rate):
         self.sampling_rate = sampling_rate
 
-    def bandpass_filter(self, data, lowcut, highcut, order=5):
+    def bandpass_filter(self, data, lowcut, highcut, order=6):
         """
         Applies a bandpass filter to the data.
 
