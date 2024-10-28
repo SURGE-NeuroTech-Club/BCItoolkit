@@ -56,8 +56,6 @@ def main():
                                     method = 'CCA', 
                                     stack_harmonics = True)
 
-    # segmentation_time_wait = Segmentation(board, segment_duration=2)
-    # segmenter = Segmentation(board, )
 
     filter_obj = Filtering(sampling_rate)
 
@@ -69,7 +67,7 @@ def main():
 
         # print(f"Total shape: {segment.shape}")
 
-        eeg_segment = segment[:8, :]  # Only the first 8 channels are EEG channels
+        eeg_segment = segment[1:9, :]  # Slice EEG data from the segment
         print(f"Segment Shape: {eeg_segment.shape}")
         
         filtered_segment = filter_obj.bandpass_filter(eeg_segment,
@@ -77,8 +75,6 @@ def main():
                                                 lowcut=0.1,
                                                 order=4  # Parameter adjusts rolloff of filter (higher = faster dropoff)
                                                 )
-        
-        # print(filtered_segment[:, :30])
         
         detected_freq, correlation = cca_classifier(filtered_segment)
         print(f"Detected frequency using CCA: {detected_freq} Hz with correlation: {correlation:.3f}")

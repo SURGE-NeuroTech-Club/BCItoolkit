@@ -351,4 +351,4 @@ dependencies:
       - yarg==0.1.9
       - zope-event==5.0
       - zope-interface==6.1
-prefix: C:\Users\masci\.conda\envs\neuro
+

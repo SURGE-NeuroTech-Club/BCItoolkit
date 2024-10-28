@@ -625,4 +625,3 @@ dependencies:
       - wxpython==4.2.1
       - xmlschema==2.5.0
       - zope-interface==6.1
-prefix: P:\Miniforge3\envs\neuro
