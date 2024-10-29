@@ -1,9 +1,9 @@
 # BCI Toolkit
 
-This repository holds the codebase and documentation for the BCItoolkit library. The goal of this library is to provide an accesible API to those with minimal python and/or brain-computer interface (BCI) experience to get started working on making online BCI systems.
+This repository holds the codebase and documentation for the BCItoolkit library. The goal of this library is to provide an accessible API to those with minimal python and/or brain-computer interface (BCI) experience to get started working on making online BCI systems.
 
-### Modules and Functionalities Overview
-***Modules/*: Each module has some self-contained documentation**
+### Modules and Functionalities Overviewaccessible 
+***Modules/*: Each module has some self-contained documentation**accessible 
 - `brainflow_stream.py`: A custom class that simplifies usage of the brainflow library to connect and stream from any board supported by brainflow. 
   - Some added features: automatically finds the serial port with the attached dongle, simplifies streaming from multiple boards simultaneously, is designed to be compatible with all of [Brainflow's BoardShim attributes](https://brainflow.readthedocs.io/en/stable/UserAPI.html#brainflow-board-shim).
 - `brainflow_filtering.py/filtering.py`: These modules support several filtering methods for EEG data. 
