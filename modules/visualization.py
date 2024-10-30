@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import welch
+import mne
 
 def plot_eeg_time_series(eeg_data, sampling_rate, channel_names=None):
     """
@@ -51,11 +52,6 @@ def plot_psd(eeg_data, sampling_rate, channel_names=None):
     ax.legend(loc='upper right')
     plt.show()
 
-
-
-import mne
-import numpy as np
-
 def plot_topomap(eeg_data, sampling_rate, channel_names, times=None):
     """
     Plots a topographic map for the EEG data at specific time points.
@@ -81,9 +77,7 @@ def plot_topomap(eeg_data, sampling_rate, channel_names, times=None):
 
     # Plot topomap at specified time points
     fig = evoked.plot_topomap(times=times, ch_type='eeg', show_names=True, show=True)
-    
-import matplotlib.pyplot as plt
-import numpy as np
+
 
 def compare_eeg_time_series(data_before, data_after, sampling_rate, channel_names=None):
     """
@@ -119,9 +113,6 @@ def compare_eeg_time_series(data_before, data_after, sampling_rate, channel_name
     plt.tight_layout()
     plt.show()
 
-
-from scipy.signal import welch
-
 def compare_psd(data_before, data_after, sampling_rate, channel_names=None):
     """
     Compare the Power Spectral Density (PSD) of two EEG datasets.
@@ -149,8 +140,6 @@ def compare_psd(data_before, data_after, sampling_rate, channel_names=None):
     ax.legend(loc='upper right')
     plt.show()
 
-from scipy.signal import welch
-import matplotlib.pyplot as plt
 
 def compare_psd_side_by_side(data_before, data_after, sampling_rate, channel_names=None):
     """
@@ -191,8 +180,6 @@ def compare_psd_side_by_side(data_before, data_after, sampling_rate, channel_nam
     plt.tight_layout()
     plt.show()
 
-from scipy.signal import welch
-import matplotlib.pyplot as plt
 
 def compare_psd_stacked(data_before, data_after, sampling_rate, channel_names=None, average=False):
     """
@@ -266,12 +253,6 @@ def compare_psd_stacked(data_before, data_after, sampling_rate, channel_names=No
     # Adjust layout
     plt.tight_layout()
     plt.show()
-
-
-## Signal Quality Visualization
-
-import numpy as np
-import matplotlib.pyplot as plt
 
 def compute_snr(eeg_data):
     """

@@ -27,7 +27,7 @@ n_samples = sampling_rate * segment_duration
 def main():
     
     # Initialize Streaming Board
-    board = BrainFlowBoardSetup(board_id = board_id, serial_port = 'COM3')
+    board = BrainFlowBoardSetup(board_id = board_id)
     board.setup()
 
     print(f"Sampling Rate: {sampling_rate}")
@@ -38,7 +38,8 @@ def main():
                                             box_texts = buttons, 
                                             box_text_indices = button_pos,
                                             display_index = display,
-                                            display_mode = 'both')
+                                            display_mode = 'both',
+                                            refresh_rate=240)
 
     stimulus_process.start()
     
@@ -76,7 +77,11 @@ def main():
                                                 order=4  # Parameter adjusts rolloff of filter (higher = faster dropoff)
                                                 )
         
-        detected_freq, correlation = cca_classifier(filtered_segment)
+        notch_filtered = filter_obj.notch_filter(filtered_segment, notch_freq=60)
+        
+        filtered_segment_norm = (notch_filtered - np.mean(notch_filtered, axis=1, keepdims=True)) / np.std(notch_filtered, axis=1, keepdims=True)
+        
+        detected_freq, correlation = cca_classifier(filtered_segment_norm)
         print(f"Detected frequency using CCA: {detected_freq} Hz with correlation: {correlation:.3f}")
 
         # Wait for 2 seconds to accumulate new data
