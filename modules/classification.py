@@ -367,35 +367,6 @@ class SSVEPClassifier:
 
         return target_freq, max_corr
 
-    def plot_reference_signals(self, eeg_segment, channel_idx=0, freq_idx=0):
-        """
-        Plots the EEG signal and the corresponding reference signals (sine and cosine) for debugging.
-
-        Args:
-            eeg_segment (np.ndarray): The EEG data segment (n_channels, n_samples).
-            channel_idx (int): The channel index of the EEG data to plot.
-            freq_idx (int): The index of the frequency to generate and plot reference signals for.
-        """
-        time = np.linspace(0, self.n_samples / self.sampling_rate, self.n_samples, endpoint=False)
-        eeg_signal = eeg_segment[channel_idx, :]
-        reference_signals = self.reference_signals[freq_idx]
-        freq = self.frequencies[freq_idx]
-
-        plt.figure(figsize=(12, 6))
-
-        # Plot EEG signal
-        plt.plot(time, eeg_signal, label=f'EEG Channel {channel_idx+1}', linewidth=2)
-
-        # Plot reference signals (first sine and cosine harmonic for simplicity)
-        plt.plot(time, reference_signals[:, 0], '--', label=f'Reference Sin (f={freq} Hz)', alpha=0.8)
-        plt.plot(time, reference_signals[:, len(self.harmonics)], '--', label=f'Reference Cos (f={freq} Hz)', alpha=0.8)
-
-        plt.xlabel('Time (s)')
-        plt.ylabel('Amplitude')
-        plt.title(f'EEG Signal vs Reference Signals for f = {freq} Hz')
-        plt.legend()
-        plt.grid(True)
-        plt.show()
 
 # # Example Usage
 # frequencies = [10, 12, 15]  # Example frequencies in Hz
