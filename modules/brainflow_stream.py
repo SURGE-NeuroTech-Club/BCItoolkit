@@ -34,6 +34,9 @@ class BrainFlowBoardSetup:
             name (str, optional): A user-friendly name or identifier for this instance. Defaults to 'Board X'.
             **kwargs: Additional keyword arguments to be set as attributes on the BrainFlowInputParams instance.
         """
+        self.instance_id = BrainFlowBoardSetup._id_counter  # Unique identifier for each instance
+        BrainFlowBoardSetup._id_counter += 1
+        
         self.board_id = board_id
         self.serial_port = serial_port
         self.master_board = master_board
@@ -44,6 +47,8 @@ class BrainFlowBoardSetup:
 
         # Initialize BrainFlow input parameters
         self.params = BrainFlowInputParams()
+        self.params.serial_port = self.serial_port
+        self.params.other_info = f"instance_id_{self.instance_id}"  # Add unique instance ID to 'other_info' -> allows for multiple instances of essentially the same board
         self.params.serial_port = self.serial_port
         if self.master_board is not None:
             self.params.master_board = self.master_board  # Set master board if provided
