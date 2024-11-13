@@ -4,8 +4,9 @@ import serial.tools.list_ports
 
 class BrainFlowBoardSetup:
     """
-    A class to manage the setup and control of a BrainFlow board.
-    Also allows for use of all BoardShim attributes (even if not explicitly defined in this class).
+    A class to manage the setup, configuration, and control of a BrainFlow board.
+    This class provides methods for initializing, configuring, and streaming data from the board.
+    It also enables access to all attributes and methods from the BoardShim instance (even if not explicitly defined in this class).
     
     Attributes:
         name (str): A user-friendly name or identifier for the board setup instance.
@@ -27,10 +28,10 @@ class BrainFlowBoardSetup:
         Initializes the BrainFlowBoardSetup class with the given board ID, serial port, master board, and additional parameters.
 
         Args:
-            board_id (int): The ID of the BrainFlow board.
-            serial_port (str): The serial port to which the BrainFlow board is connected.
-            master_board (int): The master board ID, used for playback or synthetic boards.
-            name (str): A user-friendly name or identifier for this instance. Defaults to 'Board X'.
+            board_id (int): The ID of the BrainFlow board to be used.
+            serial_port (str, optional): The serial port to which the BrainFlow board is connected.
+            master_board (int, optional): The master board ID, used for playback or synthetic boards.
+            name (str, optional): A user-friendly name or identifier for this instance. Defaults to 'Board X'.
             **kwargs: Additional keyword arguments to be set as attributes on the BrainFlowInputParams instance.
         """
         self.board_id = board_id
@@ -41,26 +42,28 @@ class BrainFlowBoardSetup:
         self.name = name or f"Board {BrainFlowBoardSetup._id_counter}"
         BrainFlowBoardSetup._id_counter += 1
 
+        # Initialize BrainFlow input parameters
         self.params = BrainFlowInputParams()
         self.params.serial_port = self.serial_port
         if self.master_board is not None:
-            self.params.master_board = self.master_board  # Set the master board if provided
-        
-        # Attempt to get EEG channels and sampling rate using the master board (if provided), otherwise use board_id
+            self.params.master_board = self.master_board  # Set master board if provided
+
+        # Retrieve EEG channels and sampling rate based on the provided board or master board
         try:
             self.eeg_channels, self.sampling_rate = self.get_board_info()
         except BrainFlowError as e:
             print(f"Error getting board info for board {self.board_id}: {e}")
             self.eeg_channels = []
             self.sampling_rate = None
-        
-        # Set additional parameters if provided
+
+        # Apply additional parameters
         for key, value in kwargs.items():
             if hasattr(self.params, key):
                 setattr(self.params, key, value)
             else:
                 print(f"Warning: {key} is not a valid parameter for BrainFlowInputParams")
 
+        # Initialize board and state flags
         self.board = None
         self.session_prepared = False
         self.streaming = False
@@ -68,16 +71,14 @@ class BrainFlowBoardSetup:
     def __getattr__(self, name):
         """
         Delegates attribute access to the BoardShim instance if the attribute is not found in the current instance.
-
-        This method allows access to BoardShim-specific attributes that may not be defined directly
-        in the BrainFlowBoardSetup class.
+        This allows access to BoardShim-specific attributes that may not be directly defined in the BrainFlowBoardSetup class.
 
         Args:
             name (str): The name of the attribute to be accessed.
 
         Returns:
             The attribute from the BoardShim instance if it exists.
-        
+
         Raises:
             AttributeError: If the attribute is not found in the current instance or the BoardShim instance.
         """
@@ -88,24 +89,17 @@ class BrainFlowBoardSetup:
     
     def get_board_info(self):
         """
-        Retrieves the EEG channels and sampling rate for the board.
-
-        If the board_id is not PLAYBACK_FILE_BOARD or SYNTHETIC_BOARD and a master_board is provided, 
-        it will raise an error since master_board is only needed for these special cases.
+        Retrieves the EEG channels and sampling rate for the board. Uses the master board if provided.
 
         Returns:
-            tuple: EEG channels (list) and sampling rate (int).
-        
+            tuple: A tuple containing EEG channels (list) and sampling rate (int).
+
         Raises:
             ValueError: If a master_board is provided for a board that doesn't support it.
         """
-        # Check if the board_id is not PLAYBACK_FILE_BOARD or SYNTHETIC_BOARD
-        if self.board_id not in [BoardIds.PLAYBACK_FILE_BOARD.value, BoardIds.SYNTHETIC_BOARD.value]:
-            # If a master_board is provided in this case, raise an error
-            if self.master_board is not None:
-                raise ValueError(f"Master board should not be provided for board ID {self.board_id}. "
-                                f"Master boards are only used for PLAYBACK_FILE_BOARD (-3) and SYNTHETIC_BOARD (-1).")
-        
+        if self.board_id not in [BoardIds.PLAYBACK_FILE_BOARD.value, BoardIds.SYNTHETIC_BOARD.value] and self.master_board:
+            raise ValueError(f"Master board is only used for PLAYBACK_FILE_BOARD (-3) and SYNTHETIC_BOARD (-1). But {self.board_id} was provided.")
+
         board_to_use = self.master_board if self.master_board is not None else self.board_id
         board_descr = BoardShim.get_board_descr(board_to_use)
         
@@ -125,9 +119,7 @@ class BrainFlowBoardSetup:
             list: A list of dictionaries containing 'port', 'serial_number', and 'description' for each compatible device.
                     Returns an empty list if no devices are found.
         """
-        # Suppress logs from BrainFlow using internal logging level control
-        BoardShim.disable_board_logger()  # Disable all logs
-
+        BoardShim.disable_board_logger()
         ports = serial.tools.list_ports.comports()
         compatible_ports = []
 
@@ -138,7 +130,6 @@ class BrainFlowBoardSetup:
                 board.prepare_session()
                 board.release_session()
                 
-                # Collect information about the compatible device
                 device_info = {
                     'port': port.device,
                     'serial_number': port.serial_number,
@@ -152,11 +143,9 @@ class BrainFlowBoardSetup:
         if not compatible_ports:
             print(f"No compatible BrainFlow devices found.")
         
-        # Re-enable logging after checking ports
         BoardShim.enable_board_logger()
-
         return compatible_ports
-    
+
     def setup(self):
         """
         Prepares the session and starts the data stream from the BrainFlow board.
@@ -168,15 +157,14 @@ class BrainFlowBoardSetup:
             BrainFlowError: If the board fails to prepare the session or start streaming.
         """
         if self.serial_port is None and self.master_board is None:
-            print(f"No serial port provided, attempting to auto-detect...")
+            print("No serial port provided, attempting to auto-detect...")
             ports_info = self.find_device_ports()
-            if ports_info:
-                self.serial_port = ports_info[0]['port']  # Default to the first detected port
-            else:
-                print(f"No compatible device found. Setup failed.")
+            self.serial_port = ports_info[0]['port'] if ports_info else None
+            if not self.serial_port:
+                print("No compatible device found. Setup failed.")
                 return
         elif self.serial_port is None and self.master_board is not None:
-            self.serial_port = ''        
+            self.serial_port = '' 
         
         self.params.serial_port = self.serial_port
         self.board = BoardShim(self.board_id, self.params)
@@ -184,16 +172,15 @@ class BrainFlowBoardSetup:
             self.board.prepare_session()
             self.session_prepared = True
             self.board.start_stream(450000)
-            self.streaming = True  # Flag to indicate if streaming is active
+            self.streaming = True
             print(f"[{self.name}, {self.serial_port}] Board setup and streaming started successfully.")
         except BrainFlowError as e:
             print(f"[{self.name}, {self.serial_port}] Error setting up board: {e}")
             self.board = None
-    
+
     def show_params(self):
         """
         Prints the current parameters of the BrainFlowInputParams instance.
-
         This method provides a simple way to inspect the current input parameters
         being used to configure the BrainFlow board.
         """
@@ -201,11 +188,36 @@ class BrainFlowBoardSetup:
         for key, value in vars(self.params).items():
             print(f"{key}: {value}")
 
+    def get_sampling_rate(self):
+        """
+        Retrieves the sampling rate of the BrainFlow board.
+
+        Returns:
+            int: The sampling rate of the BrainFlow board.
+        """
+        return self.sampling_rate
+    
+    def is_streaming(self):
+        """
+        Checks if the BrainFlow board is currently streaming data.
+
+        Returns:
+            bool: True if the board is streaming, False otherwise.
+        """
+        return self.streaming
+    
+    def get_board_name(self):
+        """
+        Retrieves the name of the BrainFlow board.
+
+        Returns:
+            str: The name of the board, useful for logging or display purposes.
+        """
+        return self.name
+    
     def get_board_data(self):
         """
-        Retrieves the current data from the BrainFlow board. - Removes data from ringbuffer
-
-        This method fetches the most recent data collected from the board, including EEG, accelerometer, and other sensor data.
+        Retrieves all accumulated data from the BrainFlow board and clears it from the buffer.
 
         Returns:
             numpy.ndarray: The current data from the BrainFlow board if the board is set up.
@@ -214,51 +226,44 @@ class BrainFlowBoardSetup:
         if self.board is not None:
             return self.board.get_board_data()
         else:
-            print(f"Board is not set up.")
+            print("Board is not set up.")
             return None
-        
+
     def get_current_board_data(self, num_samples):
         """
-        Retrieves the most recent `num_samples` data from the BrainFlow board. - Does not remove data from ringbuffer
-
-        This method fetches the latest `num_samples` from the board’s buffer, which is useful
-        for real-time data analysis.
+        Retrieves the most recent num_samples data from the BrainFlow board without clearing it from the buffer.
 
         Args:
             num_samples (int): Number of recent samples to fetch.
 
         Returns:
-            numpy.ndarray: The latest `num_samples` data from the BrainFlow board if the board is set up.
+            numpy.ndarray: The latest num_samples data from the BrainFlow board if the board is set up.
             None: If the board is not set up.
         """
         if self.board is not None:
             return self.board.get_current_board_data(num_samples)
         else:
-            print(f"Board is not set up.")
+            print("Board is not set up.")
             return None
-        
+
     def insert_marker(self, marker, verbose=True):
         """
-        Inserts a marker into the data stream at the current time.
-
-        This is useful for marking specific events in the data stream for later analysis.
+        Inserts a marker into the data stream at the current time. Useful for tagging events in the data stream.
 
         Args:
             marker (float): The marker value to be inserted.
             verbose (bool): Whether to print a confirmation message. Default is True.
         """
-        self.verbose = verbose
-
         if self.board is not None and self.streaming:
             try:
                 self.board.insert_marker(marker)
-                if self.verbose:
+                if verbose:
                     print(f"[{self.name}] Marker {marker} inserted successfully.")
             except BrainFlowError as e:
                 print(f"[{self.name}] Error inserting marker: {e}")
         else:
-            print(f"Board is not streaming, cannot insert marker.")
-            
+            print("Board is not streaming, cannot insert marker.")
+
     def stop(self):
         """
         Stops the data stream and releases the session of the BrainFlow board.
@@ -283,10 +288,10 @@ class BrainFlowBoardSetup:
     def __del__(self):
         """
         Ensures that the data stream is stopped and the session is released when the object is deleted.
-
         This method ensures that the session is properly released and resources are freed when the object is garbage collected.
         """
         self.stop()
+
 
 
 #######

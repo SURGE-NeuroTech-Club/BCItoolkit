@@ -1,7 +1,33 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import welch
-import mne
+# import mne
+
+# def plot_topomap(eeg_data, sampling_rate, channel_names, times=None):
+#     """
+#     Plots a topographic map for the EEG data at specific time points.
+    
+#     Parameters:
+#     - eeg_data: np.array, shape (n_channels, n_samples)
+#     - channel_names: list of strings, the names of EEG channels
+#     - sampling_rate: int, the sampling rate of the data in Hz
+#     - times: list of floats, time points (in seconds) to plot topomaps
+#     """
+#     if times is None:
+#         times = [0.1, 0.3, 0.5]  # Example time points
+
+#     # Create MNE info structure
+#     info = mne.create_info(ch_names=channel_names, sfreq=sampling_rate, ch_types='eeg')
+    
+#     # Set montage separately
+#     montage = mne.channels.make_standard_montage('standard_1020')
+#     info.set_montage(montage)
+    
+#     # Create an MNE Evoked object
+#     evoked = mne.EvokedArray(eeg_data, info)
+
+#     # Plot topomap at specified time points
+#     fig = evoked.plot_topomap(times=times, ch_type='eeg', show_names=True, show=True)
 
 def plot_eeg_time_series(eeg_data, sampling_rate, channel_names=None):
     """
@@ -51,32 +77,6 @@ def plot_psd(eeg_data, sampling_rate, channel_names=None):
     ax.set_ylabel('Power (uV^2/Hz)')
     ax.legend(loc='upper right')
     plt.show()
-
-def plot_topomap(eeg_data, sampling_rate, channel_names, times=None):
-    """
-    Plots a topographic map for the EEG data at specific time points.
-    
-    Parameters:
-    - eeg_data: np.array, shape (n_channels, n_samples)
-    - channel_names: list of strings, the names of EEG channels
-    - sampling_rate: int, the sampling rate of the data in Hz
-    - times: list of floats, time points (in seconds) to plot topomaps
-    """
-    if times is None:
-        times = [0.1, 0.3, 0.5]  # Example time points
-
-    # Create MNE info structure
-    info = mne.create_info(ch_names=channel_names, sfreq=sampling_rate, ch_types='eeg')
-    
-    # Set montage separately
-    montage = mne.channels.make_standard_montage('standard_1020')
-    info.set_montage(montage)
-    
-    # Create an MNE Evoked object
-    evoked = mne.EvokedArray(eeg_data, info)
-
-    # Plot topomap at specified time points
-    fig = evoked.plot_topomap(times=times, ch_type='eeg', show_names=True, show=True)
 
 
 def compare_eeg_time_series(data_before, data_after, sampling_rate, channel_names=None):

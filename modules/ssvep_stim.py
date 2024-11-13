@@ -126,7 +126,7 @@ class SSVEPStimulus:
         for i, idx in enumerate(interleaved_indices):
             angle = 2 * np.pi * i / num_boxes
             pos = (centerX + int(radius * np.cos(angle)), centerY + int(radius * np.sin(angle)))
-            box = visual.Rect(win=self.win, width=150, height=150, fillColor='white', lineColor='white', pos=pos)
+            box = visual.Rect(win=self.win, width=250, height=250, fillColor='white', lineColor='white', pos=pos)
             
             box_info = {
                 "box": box,
