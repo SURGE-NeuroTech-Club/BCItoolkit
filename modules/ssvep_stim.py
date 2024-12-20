@@ -281,11 +281,11 @@ class SSVEPStimulusRunner:
 
 # Example usage
 if __name__ == "__main__":
-    box_frequencies = [9.25, 11.25, 13.25, 15.25]
+    box_frequencies = [10, 12] #[9.25, 11.25, 13.25, 15.25]
     box_texts = ['Right', 'Left', 'Up', 'Down']
     box_text_indices = [0, 1, 3, 2]
     display_index = 0
-    refresh_rate = 240 # Optional: Provide the refresh rate directly
+    refresh_rate = 60 #240 # Optional: Provide the refresh rate directly
     display_mode = 'both' # 'freq', 'text', 'both'
     monitor_name = 'testMonitor' # Name of the monitor configuration to use (defaults to 'testMonitor')
     
@@ -302,10 +302,10 @@ if __name__ == "__main__":
     # Start the SSVEP stimulus in a separate process -> use this if running the SSVEPStimulus in the same script as EEG processing or other code
     # Create an instance of the SSVEPStimulusRunner class
     stimulus_process = SSVEPStimulusRunner(box_frequencies = box_frequencies, 
-                                            box_texts = box_texts, 
-                                            box_text_indices = box_text_indices,
+                                            # box_texts = box_texts, 
+                                            # box_text_indices = box_text_indices,
                                             display_index = display_index, 
-                                            display_mode = display_mode, 
+                                            display_mode = 'freq', 
                                             monitor_name = monitor_name)
     # (box_frequencies, box_texts, box_text_indices, display_index, display_mode, monitor_name)
     
