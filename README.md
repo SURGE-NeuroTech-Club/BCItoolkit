@@ -5,7 +5,7 @@ This repository holds the codebase and documentation for the BCItoolkit library.
 ### Modules and Functionalities  
 ***Modules/*: Each module has some self-contained documentation** 
 - `brainflow_stream.py`: A custom class that simplifies usage of the brainflow library to connect and stream from any board supported by brainflow. 
-  - Some added features: automatically finds the serial port with the attached dongle, simplifies streaming from multiple boards simultaneously, is designed to be compatible with all of [Brainflow's BoardShim attributes](https://brainflow.readthedocs.io/en/stable/UserAPI.html#brainflow-board-shim).
+  - Some added features: pyserial integration to automatically detect serial port with the attached dongle, simplifies streaming from multiple boards simultaneously, is designed to be compatible with all of [Brainflow's BoardShim attributes](https://brainflow.readthedocs.io/en/stable/UserAPI.html#brainflow-board-shim).
 - `brainflow_filtering.py/filtering.py`: These modules support several filtering methods for EEG data. 
   - brainflow_filtering.py simplifies in-place usage of the brainflow library's built-in filters.
   - filtering.py uses filters from the Scipy library. 
@@ -27,8 +27,10 @@ Documentation is a work-in-progress, for examples see scripts in *Examples/*
 ## Road-map:
 **First Release:**
 - [ ] Add (offline) visualization module
+  - Keep extremely basic -> add module for converting EEG/marker data to MNE
   - Online 'Live' time-series visualization future goal (several existing libraries may be compatible)
-  - Time series, PSD, Topographic maps, etc.
+- [ ] Time-frequency analysis module
+  - Add module for time-frequency analysis of EEG data
 - [ ] Validate CCA/SSVEP Classification (and online BCI system)
 - [ ] Add documentation on current modules
 

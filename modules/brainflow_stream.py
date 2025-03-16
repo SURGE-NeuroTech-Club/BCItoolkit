@@ -108,10 +108,10 @@ class BrainFlowBoardSetup:
         board_to_use = self.master_board if self.master_board is not None else self.board_id
         board_descr = BoardShim.get_board_descr(board_to_use)
         
-        eeg_channels = board_descr.get("eeg_channels", [])
-        sampling_rate = BoardShim.get_sampling_rate(board_to_use)
+        # eeg_channels = board_descr.get("eeg_channels", [])
+        # sampling_rate = BoardShim.get_sampling_rate(board_to_use)
         
-        return eeg_channels, sampling_rate
+        return board_descr #eeg_channels, sampling_rate
 
     def find_device_ports(self):
         """
